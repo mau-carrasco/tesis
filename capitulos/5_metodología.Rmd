@@ -1,0 +1,433 @@
+---
+lang: es
+output:
+  word_document:
+    reference_docx: formato_1.docx
+    toc: yes
+    fig_caption: yes
+csl: apa.csl
+toc-title: Tabla de contenido
+bibliography: bibliografia.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F, message = F, warning = F, fig.height = 3, fig.width = 6, results='asis')
+
+# Carga de paquetes
+library(tidyverse)
+library(haven)
+library(pglm)
+library(survival)
+library(flextable)
+library(sandwich)
+library(sf)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(countrycode)
+library(haven)
+
+setwd("~/GitHub/tesis_magister/")
+
+# Formato de tablas en flextable
+set_flextable_defaults(
+  font.size = 10,
+  font.family = "Garamond",
+  theme_fun = "theme_zebra")
+
+datos_tesis <- read_rds("datos/datos_tesis.rds")
+
+juicios <- read_dta("datos/barsbargains_replication/barsbargains.dta")
+
+datos_tesis <- datos_tesis %>% left_join(juicios %>% select(pais = country, anno = year, codigo_transicion = dtr_id, amnistias_dummy = ambin))
+```
+
+# V. Metodología
+
+El capítulo III, estableció que el objetivo principal de la tesis es analizar la contribución de los mecanismos de justicia transicional a la democracia y la protección de los derechos humanos en los países de América Latina y el Caribe que experimentaron transiciones democráticas entre los años 1970 y 2010. Para cumplir con este objetivo se desarrolló un estudio cuantitativo que busca explicar la ocurrencia de golpes de estado y la variación en los niveles de protección de los derechos de integridad física en función del uso enjuiciamientos, amnistías y comisiones de la verdad en los años posteriores a la primera transición democrática de cada país.
+
+En el presente capítulo, se describen los datos, variables y técnicas de análisis empleadas en el desarrollo de esta tesis de magister. En cada punto, se argumentan los criterios de selección de casos, indicadores y procedimientos estadísticos en función de los desafíos metodológicos planteados en el capítulo de problematización (capítulo II), y la definición de conceptos, teorías e hipótesis de investigación (capítulo III).
+
+## V.1 Datos
+
+### V.1.1 Criterios de selección de casos y limitación temporalidad del estudio
+
+Cómo se señaló en la propuesta de investigación de la tesis (Capítulo II.3), la selección de los casos de estudio se basó en dos criterios teóricos y metodológicos:
+
+**a)	Similitud de pasados autoritarios recientes:**
+
+Durante las décadas de 1970 y 1980, diecisiete de los treinta y tres países de América Latina y el Caribe estuvieron bajo dictaduras civiles y militares que sistemáticamente violaron los derechos humanos, utilizando métodos como la prisión política, la tortura, el asesinato y la desaparición forzada para controlar a la población. La mayoría de los regímenes autoritarios latinoamericanos se caracterizaron por articular discurso político centrado en la lucha contra la subversión y el comunismo internacional. Estas modalidades y discursos de la represión son cualitativamente distintos a los que operan en otros episodios de violencia estatal masiva y unilateral, como los genocidios en Ruanda y en Camboya, por ejemplo, que buscaron eliminar por completo a un sector de la población definido por sus características étnicas o religiosas (Guerrero, 2023). Por tanto, al reducir los casos de estudio a la región de América Latina y el Caribe se obtiene una muestra de países con pasados autoritarios relativamente similares.
+
+**b)	Transiciones democráticas:**
+
+La investigación se enfoca específicamente en los países que experimentaron al menos una transición democrática entre 1970 y 2010. Se excluyen casos como el de Colombia, que, aunque no tuvieron una dictadura tradicional, enfrentaron conflictos armados internos prolongados con grupos guerrilleros, paramilitares y narcotraficantes durante todo el período de estudio. La exclusión de este tipo de casos se basa en la importancia de distinguir entre las transiciones democráticas, que son emblemáticas en el contexto de la justicia transicional, y los casos de países en conflicto interno, que deben lidiar con crímenes de guerra y el proceso de reconstrucción posterior.
+
+En base a los criterios mencionados, se seleccionaron todos aquellos países de América Latina y el Caribe que experimentaron al menos una transición democrática entre 1970 y 2010: 17 en total. La tabla 1 detalla el listado de países incorporados en la muestra.
+
+```{r Tabla 1}
+
+datos_tesis %>%
+  group_by(pais, codigo_transicion) %>%
+  summarise(anno_transicion = first(as.character(anno))) %>%
+  ungroup() %>%
+  select(!codigo_transicion) %>%
+  flextable() %>%
+  merge_v(j = "pais") %>%
+  set_header_labels(
+    pais = "País",
+  anno_transicion = "Año de transición") %>%
+  autofit() %>%
+  set_caption(caption = "Tabla 1. Listado de países de América Latina y el Caribe que experimentaron una o más transiciones democráticas entre los años 1970 y 2010")
+
+```
+>>>> Fuente: Elaboración propia en base a datos del TJRC
+
+La determinación del periodo de estudio se realizó en base a la información disponible en el Proyecto TJRC (Transitional Justice Research Collaborative) que, como se explicó en la propuesta de investigación (Capítulo II.3), contiene datos cuantitativos sobre el uso de enjuiciamientos, amnistías y comisiones de la verdad en los procesos de transición experimentados en los países de América Latina y el Caribe y de otras regiones del mundo entre los años 1970 y 2010.
+
+Es importante tener en cuenta que esta muestra específica de países y años posteriores a la transición tiene limitaciones importantes. En primer lugar, la muestra fue construida con de evaluar la constribución de los mecanismos de justicia transicional a la protección de la democracia y los derechos humanos humanos dentro de un contexto particular de países de América Latina y el Caribe con democracias post autoritarias, lo hace que los resultados del estudio de tesis no sean generalizables a otros contextos regionales o a transiciones de guerras civiles en países democráticos sin pasados autoritarios recientes. En segundo lugar, la escaza información estadística disponible sobre el uso de enjuiciamientos, amnistías y comisiones en los países que han experimentado conflictos o transiciones democráticas hace que el periodo de estudio se restrinja artificialmente a la duración de los regímenes post autoritarios iniciados entre 1970 y 2010, por lo que no es posible evaluar el impacto de los mecanismos de justicia transicional en los años posteriores a este periodo. 
+
+### V.1.3 Estructura y organizaciones de la base de datos
+
+Considerando lo anterior, se elaboró una base de datos de series temporales transversales (TSCS, por sus siglas en inglés) que sistematiza información sobre enjuiciamientos, amnistías y comisiones de la verdad en los 17 países de América Latina y el Caribe que componen la muestra de estudio. En las bases de datos TSCS, cada fila (n) está asociada con una unidad específica (N) en un momento particular, y cada una de estas unidades se observa en repetidas ocasiones a lo largo de múltiples períodos de tiempo (T). En este caso, la muestra tienen un total de 456 observaciones (n) anidadas en 17 países (N) con diferentes años de transición (T = 14 - 37).
+
+La unidad de análisis de la base de datos construida para esta tesis es el año de transición por país. Por tanto, la base de datos almacena y sistematiza información de los países en los años posteriores a la recuperación de la democracia. En los países con procesos de transición democrática interrumpidos por golpes de estado y dictadura civico-militares, como es el de caso de Argentina entre los años 1973 - 1976 y 1983 en adelante, se registra en la base de datos toda la información de los años posteriores a la primera recuperación de la democracia, incluyendo los años en los que esuvo ausente el régimen democrático. 
+
+La figura 1 muestra los países y los años de transición incorporados en la base de datos.
+
+```{r Figura 1, fig.cap= "Figura 1. Años de transición democrática acumulados en los países de América Latina y el Caribe entre 1970 y 2010 (N = 17, T = 14-37)", fig.height= 5, fig.width= 8}
+world <- ne_countries(scale = "medium", returnclass = "sf")
+
+world <- world %>% 
+  select(iso_a3, geometry)
+
+world$codigo_pais <- countrycode(world$iso_a3, "iso3c", "cown")
+
+paises <- datos_tesis %>%
+  mutate(codigo_pais = as.double(codigo_pais)) %>%
+  group_by(codigo_pais, pais) %>%
+  summarise(n = n())
+
+world %>%
+  left_join(paises) %>%
+  ggplot() +
+  geom_sf(aes(fill = n)) +
+  scale_fill_gradient("Total de casos", high = "red", low = "yellow") +
+  labs(caption = "Nota: Los países en gris no registran transiciones democráticas en el periodo") +
+  theme_void() +
+  theme(legend.position = "bottom",
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        legend.title.align=0.5) +
+  guides(fill = guide_colorbar(title.position = "top",
+                               title = "Años de transición",
+                               barwidth = 15, 
+                               barheight = 0.5)) +
+  coord_sf(xlim= c(-140,-20),
+           ylim= c(-60,30), expand = FALSE)
+
+```
+
+## V.2 Variables
+
+### V.2.1 Variables dependientes
+
+#### V.2.1.1 Golpes de estado
+
+En el diseño de esta tesis de magister, se propone que los golpes de estado sean considerados como variable dependiente para evaluar la contribución de la justicia transicional a la democracia. La elección de esta variable se basa en la teoría de que los mecanismos de justicia transicional, como los enjuiciamientos penales por violaciones de derechos humanos, pueden activar a actores que podrían oponerse e interrumpir por la fuerza el  proceso de transición democrática [@Snyder2003]. En otras palabras, la implementación de estos mecanismos podría aumentar el riesgo de golpes de estado.
+
+Para analizar la ocurrencia de golpes de estado en los años de transición por país se utilizaron los datos del proyecto *Military coups d état* (CAM por sus siglas en inglés), que registra un total de 477 golpes de estado ocurridos en 99 países entre los años 1950 y 2018 [@Albrecht2018].
+
+En concordancia con el marco conceptual (Capítulo IV.1), el proyecto CAM define los golpes de estado como “intentos ilegales y abiertos por parte de oficiales militares para derrocar [por las armas] a los ejecutivos en funciones” (Powell and Thyne 2011, p. 252). Y dentro de esa definición, distingue entre los golpes perpetrados por los oficiales de elite o los oficiales de combate.
+
+Según el CAM, los golpes de oficiales de élite son llevados a cabo por destacados oficiales militares y funcionarios gubernamentales provenientes del ejército, incluidos ministros de defensa, jefes de estado mayor generales, jefes de estado mayor y/o líderes de ramas de las fuerzas armadas o unidades militares funcionales (ejército, fuerza aérea, marina, guardia republicana), así como miembros de juntas y consejos militares gobernantes [@Albrecht2018]. Todos los demás golpes constituyen golpes de oficiales de combate.
+
+Metodológicamente, el CAM se basa en los esfuerzos anteriores desarrollados por el equipo de investigación del proyecto *PT11* (Powel & Thyne, 2011) y de otros esfuerzos académicos de recopilación masiva de datos que sistematizaron la información disponible en prensa sobre los episodios de golpes de estado ocurridos en cada región entre los años 1950 y 2017 [@Albrecht2018]. Su objetivo es procesar la información de las bases de datos de estos proyectos académicos para generar mayor conocimiento sobre el fenómeno de estudio, analizando variables que registran la ocurrencia y el resultado de los golpes de estado, y caracterizan la agencia golpista a través de indicadores que describen la identidad de los conspiradores (como sus orientaciones ideológicas, origen étnico y afiliación a la rama militar) y la mecánica del complot llevado a cabo contra el ejecutivo en funciones (como las trayectorias de los gobernantes después de los intentos de golpe exitosos, y el nivel de violencia empleado en la acción de derrocamiento) (Ídem.).
+
+En la base de datos de la tesis se incorporaron tres indicadores del CAM. El primero, es un indicador numérico que da cuenta, dentro de cada país, del registro anual de golpes de estado. Esta variable considera todos los intentos de golpes de estado perpetrados por miembros de las fuerzas armadas. El segundo indicador, es una variable dicotómica que adquiere el valor 1 cuando un golpe de estado logra derrocar al ejecutivo en funciones, y el valor 0 cuanto no lo logra. Y el tercer indicador es una variable dicotómica que adquiere el valor 1 cuando los golpes son dirigidos por oficiales de élite y el valor 0 cuando los golpes son liderados por oficiales de combate.
+
+Además, utilizando la variable golpes (intentos de golpe de estado), se construyó una nueva variable dicotómica que adquiere el valor 1 cuando ocurre al menos un golpe de estado en un determinado año-país y el valor 0 cuando no ocurre. Esta nueva variable es utilizada para estimar la probabilidad de ocurrencia de un evento golpista en función del uso de enjuiciamientos, amnistías y comisiones de la verdad en los países de América Latina y el Caribe con democracias post autoritarias.
+
+La Tabla 2 describe las variables CAM utilizadas para analizar la ocurrencia de golpes de estado en las democracias post autoritarias de América Latina y el Caribe.
+
+```{r Tabla 2}
+
+tabla_1 <- vtable::sumtable(datos_tesis %>%
+                              select(contains("golpes")), labels = T, out = 'return')
+
+tabla_1 <- tabla_1 %>%
+  select(Variable, n = N, Media = Mean, Des.Est = `Std. Dev.`, Min, Max)
+
+tabla_1 %>%
+  flextable() %>%
+  autofit() %>%
+  set_caption(caption = "Tabla 2. Estadísticos descriptivos de los indicadores de golpes de estado")
+```
+>> Elaboración propia en base a los datos del CAM
+
+Cabe destacar, que las variables e indicadores CAM utilizados en este estudio muestran que 11 de los 17 países de América Latina y el Caribe con regímenes post autoritarios experimentaron al menos un episodio de golpe de estado en los años posteriores a la primera transición democrática. En total, se registran 25 golpes de estado, de los cuales 11 tuvieron éxito (es decir, derrocaron al ejecutivo en funciones) y 10 fueron dirigidos por oficiales de elite de las Fuerzas Armadas (ver Tabla 3).
+
+```{r Tabla 3}
+datos_tesis %>%
+  group_by(pais) %>%
+  summarise(golpes = sum(golpes),
+            golpes_consumados = sum(golpes_consumados),
+            golpes_elites = sum(golpes_elites)) %>%
+  janitor::adorn_totals("row") %>%
+  flextable() %>%
+  autofit() %>%
+  set_header_labels(pais = "País",
+                               golpes = "Golpes", 
+                               golpes_consumados = "Golpes consumados",
+                               golpes_elites= "Golpes de oficiales de elites") %>%
+  set_caption(caption = "Tabla 3. Número de golpes de estado perpetrados en los países de América Latina y el Caribe entre 1970 y 2010")
+```
+>> Elaboración propia en base a datos del CAM
+
+Además, los datos señalan que la mayoría de los golpes de estado ocurrieron durante los primeros años posteriores a la transición democrática, cuando muchos de los potenciales saboteadores del proceso guardaban importantes cuotas de poder institucional (Ver figura 2).
+
+```{r Figura 2, fig.cap= "Figura 2. Número de golpes de estado perpetrados en los países de América Latina en los años posteriores a la primera transición democrática (1970 - 2010)"}
+
+datos_tesis %>%
+  group_by(annos_transicion) %>%
+  summarise(golpes = sum(golpes)) %>%
+  ggplot(aes(x = annos_transicion, y = golpes)) +
+  geom_line() +
+  labs(y = "Nª golpes de estado",
+       x = "Nº de años transcurridos desde la primera transición democrática") +
+  theme_bw() +
+  theme(text = element_text(size = 10, family = "Times"))
+```
+
+#### V.1.2 Protección de los derechos de integridad física
+
+Hasta ahora, la investigación cuantitativa sobre justicia transicional utiliza preferentemente tres indicadores de protección de los derechos humanos: el Índice de Derechos de Integridad Física de Cingranelli y Richards -CIRI- [-@Cingranelli2010], la Escala de Terror Político -PTS- (Political Terror Scale) del Departamento de Ciencia Política de la Universidad de Carolina del Norte (EE.UU) [@Wood2010], y el Índice de Integridad Física Latente de Schnakenberg y Fariss (2014).
+
+El índice de Derechos de Integridad Física de Cingranelli y Richards (CIRI) [-@Cingranelli2010] es un indicador estadístico que mide el nivel de respeto de los gobiernos por los derechos de integridad física en 202 países, entre los años 1981 y 2011. La unidad de análisis de CIRI es el "año-país" y su principal fuente de información son los informes de países sobre prácticas de derechos humanos del Departamento de Estado de los Estados Unidos y el informe anual de Amnistía Internacional. Su metodología se basa en la codificación separada de los casos de tortura, desaparición forzada, asesinatos y prisión política y su ponderación en escalas que van desde 0 a 2 puntos, donde 0 (cero) indica la comisión sistemática o generalizada de estos delitos, 1 indica la comisión ocasional y 2 indica la no ocurrencia. A partir de este registro, se construye un índice sumatorio que mide en una escala de ocho puntos el nivel de respeto por los derechos de integridad física, donde los puntajes más altos dan cuenta de un mayor nivel de protección (ver fórmula).
+
+$$
+CIRI = \sum_{i=0}^{n = 2} Xi\ = X_1{Prisión} + X_2{Tortura} + X_3{Asesinatos} + X_4{Desapariciones}
+$$
+
+La Escala de Terror Político del Departamento de Ciencias Políticas de la Universidad de Carolina del Norte (USA) [@Wood2010] es un indicador estadístico que mide el nivel de violencia estatal de 169 países, entre los años 1976 y 2019, a través del registro anual de violaciones a los derechos humanos de integridad física que hacen 3 organizaciones internacionales especializadas en la materia: Amnistía Internacional, Human Rights Watch y el Departamento de Estado de los Estados Unidos. Su metodología consiste en asignar duplas de investigadores especializados, que se encargan de codificar todas las violaciones al derecho humano a la integridad física que cometen los agentes estatales en cada país, y que están presentes en el contenido de los escritos publicados año a año por las organizaciones internacionales (Wood & Gibney, 2010). Luego, se analiza el volumen y el tipo de las violaciones a los derechos humanos (tortura, desaparición forzada, asesinatos políticos, etc.) que fueron codificadas en los informes y se construye un índice cualitativo que asigna un puntaje a cada país, en una escala de 5 niveles donde 1 es el nivel de terror político más bajo y 5 es el más alto (ver Tabla 4). De esta manera, se construyen tres indicadores de violencia estatal (o terror político): uno para cada organización.
+
+```{r Tabla 4}
+
+Nivel <- c(1:5)
+
+Detalle <- c("El país tiene un estado de derecho seguro. Las personas no son encarceladas por sus ideas políticas, y la tortura o la aplicación de tratos crueles es rara o excepcional. Los asesinatos políticos son extremadamente raros",
+             "Hay una cantidad limitada de prisión por actividad política no violenta. En ciertas ocasiones, algunas personas se ven afectadas por la violencia estatal, aunque la tortura y las palizas son excepcionales, y el asesinato político es muy raro o inexistente",
+             "Hay un encarcelamiento político extenso en algunos sectores políticos o sociales, o hoy una historia reciente de tal encarcelamiento. La ejecución u otros asesinatos políticos son escasos, aunque la brutalidad policial o militar suele ser común. Las autoridades adoptan un discurso que acepta la detención ilimitada, con o sin juicio, por puntos de vista políticos",
+             "Las violaciones de los derechos civiles y políticos se han ampliado a un número importante de personas. Asesinatos, desapariciones y/o torturas son parte de la vida cotidiana. A pesar de su carácter generalizado, la violencia estatal afecta mayoritariamente a aquellas personas que se interesan por la política y/o participan en movimientos que cuestionan el orden establecido",
+             "Las violaciones a los derechos humanos descritas en el nivel 4 se extienden a toda la población o a un sector completo de ella. Las autoridades políticas de estos países no ponen límites al uso de medios ilegales por parte de agentes del Estado, porque algunas vulneraciones contribuyen a alcanzar sus objetivos personales o ideológicos")
+
+tabla_4 <- cbind(Nivel, Detalle) %>%
+  as_tibble() %>%
+  flextable() %>%
+  set_header_labels(
+  Nivel = "PTS",
+  Detalle = "Situación de los derechos humanos"
+) %>%
+  align(align = "center", part = "all") %>%
+  set_caption(caption = "Tabla 4. Niveles de la Escala de Terror Político (PTS)")
+
+FitFlextableToPage <- function(ft, pgwidth = 6){
+
+  ft_out <- ft %>% autofit(part = c("header", "body"))
+
+  ft_out <- width(ft_out, width = dim(ft_out)$widths*pgwidth /(flextable_dim(ft_out)$widths))
+  return(ft_out)
+}
+
+FitFlextableToPage(tabla_4)
+
+```
+Fuente: @Haschke2019, p. 13
+
+El Índice de Integridad Física Latente de Schnakenberg y Fariss es un indicador robusto de protección de los derechos humanos que cubre un total de 198 países, entre los años 1946 y 2019 [@Schnakenberg2013]. Fue construido utilizando dos tipos de fuentes de información estadística sobre protección de los derechos humanos en los países: las fuentes basadas en el cumplimiento de estandares que se reportan a través de informes emitidos por organismos internacionales de derechos humanos, como CIRI y PTS, y las fuentes basadas en el registro de eventos represivos, como genocidios y asesinatos masivos [@Harff2003; @Rummel2016], o ataques armados contra la población civil [@Eck2016], que han sido sistematizados por otros proyectos académicos.
+
+El puntaje del Índice de Protección de Integridad Física Latente es calculado a través de un modelo de teoría dinámica de respuesta al ítem ordinal que reduce el sesgo de medición que generan los cambios en el nivel de información disponible en cada fuente de datos y en los estándares internacionales de derechos humanos a lo largo del tiempo [@Fariss2014; @Schnakenberg2013; @Clark2013]. El cálculo del puntaje consiste en crear $m$ conjuntos de datos utilizando diferentes dibujos de la distribución posterior de la variable latente, para luego combinarlas a través de la fórmula de Rubin, donde la estimación puntual para cada parámetro es la media de las estimaciones $m$, y el error estándar es:
+
+$$
+\sqrt{\frac{1}{m} \sum_{m}^{k} \ S_{k}^{2} + (1 + \frac{1}{m})\sigma _{\beta}^{2}}
+$$
+
+donde $S_{k}^{2}$ es el error estándar del conjunto de datos $k$, y $\sigma _{\beta}^{2}$ es la varianza en los coeficientes de regresión entre conjuntos de datos. En palabras, el error estándar de $\beta$ es el error estándar promedio de cada modelo, más la varianza en los coeficientes de regresión multiplicada por un factor de corrección para cada $m$ [@Schnakenberg2013, p. 22].
+
+La Figura 3 muestra el historiograma de los puntajes latentes de protección de los derechos humanos de integridad física en los países de América Latina con regímenes post autoritarios, estimados a través del modelo de teoría dinámica de respuesta al ítem de @Schnakenberg2013. En ella, se puede observar que los puntajes del índice están centrados en su media y se distribuyen en una escala de intervalo similar al de la curva normal, que va desde el nivel más bajo de protección (`r round(min(datos_tesis$proteccion_ddhh, na.rm = T), 1)`) hasta el más alto (`r round(max(datos_tesis$proteccion_ddhh, na.rm = T), 1)`).
+
+```{r Figura 3, fig.cap= "Figura 3. Historiograma de puntajes del Indice de Protección de Integridad Física Latente", fig.pos= "center"}
+datos_tesis %>%
+  ggplot(aes(x = proteccion_ddhh, fill = "blue")) +
+  geom_histogram(bins = 8, color = "black") +
+  labs(x = "Protección de la integridad física",
+       y = "Frecuencia") +
+  theme_bw() +
+  theme(legend.position = "none",
+        text = element_text(size = 10, family = "Times"))
+
+```
+
+Para analizar los niveles de protección de los derechos humanos observados en los años de transición por país se utilizaron los datos del Índice de Integridad Física Latente de Schnakenberg y Fariss. La elección de este indicador se fundamenta en tres grandes razones. Primero, porque cubre un periodo temporal que es mayor que el de CIRI y PTS. Segundo, porque el puntaje estimado de integridad física latente proviene de un modelo estadístico que integra diferentes fuentes de información disponible, entre las que se incluye CIRI y PTS. Y tercero, porque dicho modelo estadístico incorpora el historial represivo de los países y los cambios en los estándares de derechos humanos a lo largo del tiempo.
+
+De acuerdo con los datos del Integridad Física Latente, la mayoría de los países de América Latina y el Caribe mejoraron signficativamente sus niveles de protección de los derecho humanos durante los años posteriores a la primera transición democrática (ver Figura 4). Además, los datos muestran que los países que a travesaron por periodos de conflicto armado interno o vivieron episodios de golpes de estado que interrumpieron los procesos de transición democrática, como es el caso de Argentina, El Salvador y Perú, experimentaron un deterioro significativo en los niveles de protección de los derechos humanos.
+
+```{r Figura 4, fig.cap= "Figura 4. Variación histórica de los puntajes del Indice de Protección de Integridad Física Latente en los regímenes post autoritarios de América Latina y el Caribe (1970 - 2010)", fig.pos= "center", fig.height=5, fig.width=8}
+
+datos_tesis %>%
+  ggplot(aes(x = anno,
+             y = proteccion_ddhh)) +
+  geom_line() +
+  facet_wrap(~pais) +
+  labs(y = "Puntaje Índice de Integridad Física Latente",
+       x = "Año") +
+  theme_bw() +
+  theme(text = element_text(size = 10, family = "Times"))
+
+```
+
+### V.2.2 Variables independientes
+
+Para medir el uso de los mecanismos de justicia transicional se utilizaron los indicadores del Transitional Justice Research Collaborative (TJRC): un proyecto académico que, se basándose en las definiciones del derecho internacional, registró el número de enjuiciamientos, sentencias, amnistías y comisiones de la verdad que se celebraron entre años 1970 y 2010 para investigar los delitos perpetrados por agentes estatales o por privados que operaron con su aquiescencia durante el periodo autoritario anterior.
+
+A diferencia de otras fuentes de información estadística, los indicadores del TJRC permiten medir la frecuencia y la calidad de los mecanismos de justicia transicional [@Dancy2019; @Dancy2022]. En lugar de simplemente clasificar si un mecanismo está presente o ausente, estos indicadores permiten cuantificar cuántos enjuiciamientos se llevaron a cabo, cuántas sentencias con veredictos de culpabilidad se emitieron, cuántas amnistías se decretaron y cuántas comisiones de la verdad operaron en un determinado año-país. Además, el TJRC incorpora indicadores dicotómicos desagregados que registran la publicación de informes de las comisiones de la verdad y la formulación de recomendaciones de reforma y de enjuiciamiento de criminales de lesa humanidad.
+
+En concreto, se incorporó a la base de datos de la tesis los indicadores del TJRC que dan cuenta del número de juicios y sentencias condenatorias por violaciones de derechos humanos acumuladas en cada transición a lo largo de los años, y también los indicadores cuantitativos y cualitativos que miden la ocurrencia acumulada de las comisiones de la verdad en las transiciones y la publicación de informes con recomendaciones de reforma o enjuiciamiento. Además, se incorporó un indicador de amnistías que mide la cantidad de leyes de amnistías acumuladas en cada transición, incluyendo las leyes de autoamnistía aprobadas por líderes autocráticos antes del inicio de la democratización, como el proceso de Chile de 1979.
+
+La Tabla 5 describe las variables independientes que operan como predictores en el estudio de esta tesis.
+
+```{r Tabla 5}
+datos_tesis %>%
+  select(enjuiciamientos, enjuiciamientos_acum, amnistias, amnistias_acum, comisiones, comisiones_acum, comisiones_enjuiciamientos_dummy, comisiones_reforma_dummy) %>%
+  vtable::sumtable(labels = T, out = 'return') %>%
+  select(Variable, n = N, Media = Mean, Des.Est = `Std. Dev.`, Min, Max) %>%
+  flextable() %>%
+  autofit() %>%
+  set_caption(caption = "Tabla 5. Estadísticos descriptivos de las variables predictoras")
+```
+>> Fuente: Elabotación propia en base a datos del TJRC
+
+Según los datos del TJRC, de los 17 países de América Latina y el Caribe que experimetaron transiciones democráticas, 15 persiguieron al menos un enjuiciamiento, 11 mantuvieron vigentes o aprobaron al menos una ley de amnistía, y 12 implementaron al menos una comisión de la verdad; 11 países emplearon alguna combinación de juicios y amnistías, o juicios y comisiones de la verdad, y 8 hicieron uso de estos tres mecanismos de manera combinada (ver Figura 5). Cabe destacar, que en toda la muestra no hay ningún país que haya dictado unicamente leyes de amnitías para enfrentar las consecuencias de sus pasados autoritarios recientes en materia de derechos humanos.
+
+```{r Figura 5, fig.cap= "Figura 5. Combinación de mecanismos de justicia transicional en los países de América Latina y el Caribe con regímenes post autoritarios (1970-2010)", fig.height= 5, fig.width= 8}
+
+figura_5 <- list(
+  "Enjuiciamientos" = unique(datos_tesis$codigo_pais[datos_tesis$enjuiciamientos_acum > 0]),
+  "Amnistías" = unique(datos_tesis$codigo_pais[datos_tesis$amnistias_dummy > 0]),
+  "Comisiones de la Verdad" = unique(datos_tesis$codigo_pais[datos_tesis$comisiones_acum > 0])
+  )
+
+ggvenn::ggvenn(figura_5,
+               show_percentage = FALSE,
+               fill_color = c("red", "yellow", "orange"))
+
+
+
+```
+
+Al analizar longitudinalmente la evidencia estadística acumulada por el TJRC, se puede ver que, entre 1970 y 2010, se generó una *cascada de justicia* en los países de América Latina y el Caribe con regímenes posautoritarios [@Sikkink2013], debido al explosivo aumento en el número de enjuiciamientos y de condenas por violaciones de derechos humanos que ha disminuido significativamente los niveles de impunidad [@Lessa2014]. Cómo muestra la Figura 6, durante el periodo de estudio, las  amnistías  se  aprobaron  regularmente  en los primeros años de transición, antes o después  una  pequeña de  cantidad  de  juicios,  pero  los  enjuiciamientos  siguieron  ocurriendo en la mayoría de los países y fueron aumentando en volumen a medida que transcurrieron los años de transición.
+
+```{r Figura 6, fig.cap= "Figura 6. Enjuiciamientos, setencias y amnistías por violaciones a los derechos humanos acumuladas en los países de América Latina y el Caribe entre 1970 y 2010"}
+
+datos_tesis %>%
+  group_by(anno) %>%
+  summarize(juicios = sum(enjuiciamientos),
+            sentencias = sum(sentencias),
+            amnistias = sum(amnistias)) %>%
+  mutate(sumatoria_juicios = cumsum(juicios),
+         sumatoria_amnistias = cumsum(amnistias)) %>%
+  ggplot(aes(x = anno)) +
+  geom_line(aes(y = sumatoria_amnistias, colour = "Amnistías"), linetype = 2) +
+  geom_line(aes(y = sumatoria_juicios, colour = "Juicios"), linetype = 1) +
+  labs(x = "Año",
+       y = "Frecuencia acumulada") +
+  scale_colour_manual(values = c("orange", "red")) +
+  theme_bw() +
+  theme(legend.position = "bottom",
+        legend.title = element_blank())
+```
+
+En cuanto a las comisiones de la verdad, los datos del TJRC señalan que, entre 1970 y 2010, se celebró un total de 17 comisiones de la verdad en 12 países de América Latina. Al comparar el contenido de los informes emitidos por esas comisiones de la verdad, se puede ver que el 58,82% de ellas recomendó el enjuiciamiento de criminales de lesa humanidad y el 47,06% recomendó la implementación de reformas institucionales (ver Tabla 6).
+
+```{r Tabla 6}
+datos_tesis %>%
+  filter(comisiones > 0) %>%
+  group_by(pais, comisiones_acum) %>%
+  summarise(anno = first(as.character(anno)),
+            com_enjuiciamiento = last(comisiones_enjuiciamientos_dummy),
+            com_reforma = last(comisiones_reforma_dummy)) %>%
+  ungroup() %>%
+  select(!comisiones_acum) %>%
+  flextable() %>%
+  merge_v(j = "pais") %>%
+  set_header_labels(pais = "País",
+                    anno = "Año",
+                    com_enjuiciamiento = "Recomendación de enjuiciamientos",
+                    com_reforma = "Recomendación de reformas") %>%
+  set_caption(caption = "Tabla 6. Comisiones de la verdad celebradas en los países de América Latina y el Caribe con regímenes post autoritarios entre los años 1970 y 2010")
+```
+>> Fuente: Elaboración propia en base a los datos del TJRC
+
+### V.2.3 Variables de control
+
+Cómo variables de control se incorporaron diferentes tipos de indicadores. En primer lugar, se incorporaron indicadores de la base de datos del Banco Mundial relacionados con la estructura de la población, e indicadores sobre la existencia de conflictos violentos del conjunto de datos de conflictos armados UCDP/PRIO de la Universidad de Uppsala. En cuanto a la estructura de la población, el logaritmo natural del Producto Interno Bruto (PIB) per cápita (en dólares estadounidenses constantes) controla el nivel de riqueza nacional de un país, porque a menudo se encuentra que la democracia y la protección de los derechos humanos están fuertemente correlacionadas con la capacidad económica de las naciones [@Keith2012]. El control por tamaño de la población da cuenta de los posibles desafíos que plantean los países más grandes a la gobernabilidad democrática y la mayor oportunidad que tienen los estados de violar los derechos humanos en localidades densamente pobladas [@Davenport2004a]. Por su parte, el indicador que da cuenta de la existencia de conflictos armados internos, controla las amenazas a la seguridad nacional que pueden socavar tanto las instituciones democráticas como la protección de los derechos humanos. Esta variable distingue entre el conflicto de nivel inferior, con al menos 25 muertes relacionadas con batallas, y la guerra, que tiene al menos 1000 muertes relacionadas con batallas por cada año [@Pettersson2020]. 
+
+En segundo lugar, se incorporaron variables de control vinculadas a los niveles de democracia y de control civil sobre el ejecutivo. En particular, se incorporó el indicador Polity II que controla los niveles de democracia de los países en transición. Polity II codifica rangos institucionales del ejercicio de la autoridad, incluidos los procedimientos a través de los cuales los ciudadanos eligen a sus líderes y aquellas instituciones que restringen el poder de los gobernades. En cuarto lugar, se incluyó un indicador que da cuenta del tipo de transición democrática. Este indicador toma el valor 0 cuando se trata de una transición pactada con las fuerzas autocráticas y el valor 1 cuando se trata de una transición democrática que inicia con la derrota o el colapso del régimen democrático saliente. 
+
+La tabla 7, resume las estadísticas descriptivas de las variables de control utilizadas en el análisis multivariado de la protección de los derechos humanos.
+
+```{r Tabla 7}
+datos_tesis %>%
+  select(pib, poblacion, polity2, conflicto, intependencia_pjud) %>%
+  vtable::sumtable(labels = T, out = 'return') %>%
+  select(Variable, n = N, Media = Mean, Des.Est = `Std. Dev.`, Min, Max) %>%
+  flextable() %>%
+  autofit() %>%
+  set_caption(caption = "Tabla 7. Estadísticos descriptivos de las variables de control")
+```
+
+## V.3 Técnicas de análisis de datos
+
+### V.3.1 Regresiones logísticas y lineales en datos TSCS
+
+Siguiendo las recomendaciones de @Beck2011, se optó por analizar la contribución de los mecanismos de justicia transicional a la democracia y la protección de los derechos humanos a través de modelos de regresión logística y lineal para datos TSCS. Los modelos de regresión logística estiman la probabilidad de ocurrencia de intentos de golpes de estado en cada país y año de transición, en función del uso de uno o más mecanismos de justicia transicional. Y los modelos de regresión lineal estiman el puntaje latente de protección de los derechos de integridad física para cada país y año de transición, en función del uso individual y combinado de enjuiciamientos, amnistías y comisiones de la verdad.
+
+La fórmula general que describe los modelos de regresión logística utilizados en la tesis es:
+
+\[ \log \left( \frac{p_{it}}{1 - p_{it}} \right) = \alpha_i + \beta_0 + \beta_1X_{1it} + \beta_2X_{2it} + \ldots + \beta_kX_{kit} + \epsilon_{it} \]
+
+donde \(p_{it}\) representa la probabilidad de un intento de golpe de estado en un determinado país \(i\) y año de transición \(t\), \( \alpha_i \) es el efecto fijo específico del país \( i \), \(X_{1it-1}, X_{2it-1}, \ldots, X_{kit-1}\) son los valores rezagados de las variables independientes (enjuiciamientos, sentencias, amnistías, comisiones de la verdad y otros indicadores de control estadístico) en el año anterior \(t-1\) y \(\epsilon_{it}\) es el error aleatorio que captura la probabilidad no explicada.
+
+Y la fórmula general que describe los modelos de regresión lineal es:
+
+\[ Y_{it} = \alpha_i + \beta_0 + \beta_1X_{1it-1} + \beta_2X_{2it-1} + \ldots + \beta_kX_{kit-1} + \epsilon_{it} \]
+
+donde \(Y_{it}\) representa la protección de los derechos de integridad física en el país \(i\) en el período de tiempo \(t\), \( \alpha_i \) es el efecto fijo específico del país \( i \), \(X_{1it-1}, X_{2it-1}, \ldots, X_{kit-1}\) son las variables independientes de interés y control estadístico en el periodo \(t-1\), y \(\epsilon_{it}\) es el error aleatorio.
+
+En ambos modelos se controla y se tienen en cuenta los efectos individuales específicos de cada país en el análisis de regresión. Es decir, se estiman coeficientes de regresión con un efecto fijo por país \(\alpha_i\). La inclusión de estos efectos se justifica por la necesidad de controlar factores no observables que pueden variar de un país a otro y que podrían influir en la probabilidad de ocurrencia de un intento de golpe de estado o en el nivel de protección de los derechos de integridad física. Esto permite aislar el impacto de la justicia transicional en las variables dependientes y reducir posibles sesgos en los resultados.
+
+Cada modelo incorpora también un indicador que representa la media acumulativa de la protección de los derechos de integridad física en un país específico desde 1949. Este indicador se utiliza para considerar los legados históricos de represión, ya que los países que han experimentado períodos más prolongados de violaciones de los derechos humanos tienen una mayor probabilidad de enfrentar golpes de estado y una mayor necesidad de implementar mecanismos de justicia transicional [@Dancy2022].
+
+Además, los modelos de regresión utilizan variables independientes rezagadas. Esto significa que incluyen indicadores de enjuiciamientos, amnistías, comisiones de la verdad y otras variables de control registradas en años anteriores para capturar cómo los valores pasados de esas variables pueden afectar a la variable dependiente de cada modelo en el período actual. Esto es especialmente útil cuando se trabaja con datos TSCS, ya que permite considerar la dinámica temporal y las posibles relaciones de causalidad a lo largo del tiempo [@Beck2011].
+
+El historial represivo de los países y los rezagos de las variables independientes se representan en la fórmula de regresión mediante la inclusión de indicadores de interés y de control estadístico en períodos de tiempo anteriores. Por ejemplo, para estimar el puntaje latente de protección de los derechos de integridad física para un determinado país y año de transición (\(it\)), se incluyó el número de enjuiciamientos acumulados en el período \(t-1\) y la media del historial represivo del país en el periodo \(t-1\), entre otras variables independiente rezagada. Esto permite evaluar si el aumento en el número de enjuiciamientos acumulados en el período anterior (\(t-1\)) tiene un efecto significativo en el nivel de protección de los derechos humanos registrados en el periodo actual (\(t\)), considerando el historial represivo de ese país.
+
+### V.3.2 Errores estándar corregidos por paneles PCSEs
+
+Los Errores Estándar Corregidos por Paneles (PCSEs por sus siglas en inglés) desempeñan un papel crucial en el trabajo con datos TSCS y modelos de regresión lineal. Estos permiten abordar los problemas más comunes que afectan la robustez y la validez de las estimaciones, como la heteroscedasticidad y la autocorrelación [@Beck2011; @Millo2017]. 
+
+El problema de la heteroscedasticidad refiere a la variación desigual en los errores de un modelo de regresión lineal a lo largo del tiempo o entre países [@Beck2001]. En la tesis, esto podría relacionarse con la variación en la aplicación de mecanismos de justicia transicional en diferentes países y momentos del periodo post autoritario y su impacto en el nivel de protección latente de los derechos humanos. Para abordar la heteroscedasticidad observada en los modelos no corregidos (ver Anexo I: Prueba de supuestos), se utilizó la siguiente fórmula:
+
+\[ SE = \frac{SE_{OLS}}{\sqrt{H}} \]
+
+Donde \(SE\) es el error estándar corregido, \(SE_{OLS}\) es el error estándar de mínimos cuadrados ordinarios y \(H\) es el factor de corrección para heteroscedasticidad.
+
+Por su parte, los problemas de autocorrelación refieren a la correlación entre los errores del modelo en diferentes períodos [@Beck2001]. En la tesis, esto es de especial importancia porque los efectos de los mecanismos de justicia transicional en la protección latente de los derechos humanos pueden persistir a lo largo del tiempo. 
+
+Para abordar la autocorrelación observada en los modelos no corregidos (ver Anexo 1: Prueba de supuestos), se realizó un ajuste en la matriz de varianza-covarianza de los errores a lo largo del tiempo, mediante la estimación de un modelo autorregresivo (AR), que especifica que el error en un período de tiempo depende de los errores en los períodos anteriores [@Millo2017]. Este modelo AR se formuló de la siguiente manera:
+
+\[e_t = \rho e_{t-1} + u_t\]
+
+Donde \(e_t\) es el error en el período de tiempo \(t\); \(\rho\) es el coeficiente de autocorrelación, que refleja la relación entre el error en el período \(t\) y el error en el período anterior (\(t-1\)); y \(u_t\) es un término de error en el período \(t\) que no está correlacionado con el error en el período \(t-1\).
+
+El ajuste en la matriz de varianza-covarianza se basó en estimar el valor de \(\rho\) y utilizar esta estimación para calcular la covarianza entre los errores en diferentes períodos de transición. Esto permitió que los modelos reflejen la autocorrelación y ajusten adecuadamente los errores estándar para describir la verdadera estructura de correlación entre las variables dependientes e independientes.
+
+Cabe destacar, que la estimación de los modelos y de los PCSEs se realizó en RStudio, utilizando los paquetes *Tidyverse* [@Wickham2019], *plm* [@Croissant2008], *lmtest* [@Zeileis2002] y *Modelsummary* [@Arel2022]. Los códigos empleados en las operaciones de procesamiento, análisis y visualización de datos están disponibles en el Anexo 2: Códigos en RStudio.

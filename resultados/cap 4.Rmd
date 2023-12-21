@@ -1,0 +1,263 @@
+---
+title: "IV. RESULTADOS"
+author: "Mauricio Carrasco"
+date: '2022-11-17'
+lang: es
+output:
+  word_document:
+    reference_docx: formato_1.docx
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F, warning = F, fig.height = 4, fig.width = 8, results='asis')
+#### Carga de paquetes ####
+
+library(tidyverse)
+library(tidymodels)
+library(plm)
+library(pglm)
+library(haven)
+library(sandwich)
+library(survival)
+library(flextable)
+library(modelsummary)
+library(sf)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(countrycode)
+library(ggvenn)
+
+datos_tesis <- read_rds("C:/Users/mcarrasco/Desktop/git/tesis_magister/datos/datos_tesis.rds")
+
+```
+
+# Cap 4. Justicia transicional y estabilidad de las democracias post autoritarias
+
+En el presente capítulo se ponen a prueba las hipótesis del “enfoque realista” de la justicia transicional, promovido por los académicos que cuestionan la adopción de políticas de rendición de cuentas penales en derechos humanos que puedan alterar el equilibrio de los “intereses políticos dominantes” en la transición y poner en riesgo la nueva democracia (Vinjamuri & Snyder, 2003).
+
+La tesis central del enfoque realista es que los gobiernos post autoritarios que llevan adelante enjuiciamientos y condenas penales en contra de violadores de derechos humanos enfrentarán una mayor amenaza de golpes militares, y tendrán más partidos insatisfechos que cuestionen la legitimidad de la nueva democracia (Snyder & Vinjamuri, 2003). Por tanto, bajo este enfoque, las amnistías y la impunidad son vistas como males necesarios; es decir, como medidas responsables que buscan garantizar la estabilidad política y el estado de derecho; mientras que el enjuiciamiento penal, al afectar al personal represivo de la autocracia saliente, pone en riesgo la democracia y la protección de los derechos humanos, sobre todo durante los primeros años de transición, que es el periodo en el que los potenciales saboteadores del proceso aún guardan importantes cuotas de poder institucional.
+
+En cuanto a las comisiones de verdad, el enfoque realista considera que estas medidas de justicia transicional son potencialmente menos desestabilizadoras para las democracias que los enjuiciamientos penales, sobre todo si consideran el otorgamiento de amnistías para quienes contribuyan con la investigación (Olsen, Payne, & Reiter, 2010, p. 987). Las comisiones de verdad por si solas, y las que se combinan con la dictación de leyes de amnistías, pueden generar un camino alternativo a la rendición de cuentas penales, al exponer y condenar públicamente los crímenes ocurridos en el pasado, sin poner en riesgo la estabilidad del régimen democrático post autoritario a través de la acción punitiva. En cambio, si las comisiones de verdad se combinan con una política de enjuiciamiento de criminales de lesa humanidad, podrían generar mayor riesgo de golpes de estado.
+
+Las hipótesis a probar en este capítulo son las siguientes:
+
+- Hipótesis 1 (a): El aumento en el número de enjuiciamientos y condenas por violaciones de derechos humanos estará asociado con un aumento en el número de intentos de golpes de estado en los procesos de transición democrática
+
+- Hipótesis 1 (b): El aumento en el número de amnistías para violadores de derechos humanos estará asociado con una disminución de los intentos de golpes de estado en los procesos de transición democrática
+
+- Hipótesis 1 (c) La combinación de comisiones de verdad y enjuiciamiento o condenas por violaciones de derechos humanos estará asociada con un aumento en el número de intentos de golpes de estado en los procesos de transición democrática
+
+- Hipótesis 1 (d): La combinación de comisiones de verdad y amnistías para violadores de derechos humanos estará asociada con una disminución de los intentos de golpes de estado en los procesos de transición democrática
+
+Para probar la hipótesis 1 (a), se examinó la relación entre la iniciación de enjuiciamientos o dictación de sentencias condenatorias y todos los “intentos de golpe de Estado” registrados en el país durante un año, que “son intentos ilegales y abiertos por parte de oficiales militares para derrocar [por las armas] a los ejecutivos en funciones” (Albrecht & Eibl, 2018, p. 316). Si el uso de herramientas penales pone en riesgo la estabilidad de los gobiernos democráticos post autoritarios, como predicen los académicos del enfoque realista, entonces el aumento en el número de juicios iniciados o sentencias con condenas dictadas en cualquier año de transición debería correlacionarse positivamente con la ocurrencia de uno o más intentos de golpes de estado de manera inmediata. La hipótesis 1 (b), por su parte, se probó examinando la relación entre la dictación de nuevas leyes de amnistías y los intentos de golpes de estado observados durante los años de democracia post autoritaria. Si los académicos del realismo político tienen razón, el aumento en el número de leyes de amnistía acumuladas durante el periodo post autoritario debería correlacionarse negativamente con la ocurrencia de uno o más intentos de golpes de estado de manera inmediata.
+
+Para probar las hipótesis 1(c) y 1(d) se analizó la relación entre el uso combinado de mecanismos de justicia transicional y la ocurrencia de intentos de golpe de estado en las democracias post autoritarias. Si las comisiones de verdad se configuran como un camino alternativo a la rendición de cuentas judiciales al mezclarse con disposiciones legales de amnistías para los violadores de derechos humanos que contribuyan con la investigación, estas deberían correlacionarse negativamente con los de intentos de golpes de estado observados en las transiciones democráticas (hipótesis 1 d). En cambio, si las comisiones de verdad se combinan con una política de rendición de cuentas penales para los violadores de derechos humanos, estas deberían correlacionarse positivamente con los intentos de golpe (hipótesis 1 d).
+
+La prueba de las hipótesis consistió en el cálculo de cuatro modelos de regresiones logísticas de efecto fijo. El uso de esta técnica de regresión se justifica por dos razones: primero, porque la variable dependiente a explicar es un indicador de conteo que registra el número de intentos de golpe de estado observados por año dentro de cada transición democrática, con independencia de si estos intentos lograron o no remover al gobierno de turno; y segundo, porque el número de observaciones en la muestra que registra más de un intentos de golpes de estado es excesivamente bajo por lo que es preferible agrupar todos los intentos de golpe de estado en una sola categoría que dé cuenta de la presencia de los eventos observados.
+
+
+```{r}
+
+datos_tesis %>%
+  count("Intentos" = intento_golpe) %>%
+  mutate("%" = round(n/sum(n)*100)) %>%
+  flextable() %>%
+  theme_vanilla() %>%
+  autofit() %>%
+  set_caption("Tabla 1. Intentos de golpe de estado en los años posteiores a la transición democrática")
+
+```
+
+
+La tabla 2 muestra los resultados de los modelos de regresión. El primer modelo examina la relación entre aumento de las amnistías o enjuiciamientos de violadores de derechos humanos y los intentos de golpes de estado observados en cada año de transición. El segundo modelo es exactamente igual al primero, pero considera el número de setencias condenatorias acumuladas en vez de los enjuiciamientos. El tercer modelo, estima la contribución del uso combinado de amnistías y comisiones de verdad a la ocurrencia de intentos de golpes de estado, y el cuarto modelo estima la contribución de los juicios y comisiones de verdad. En todos los modelos se incluyeron variables de control para el nivel de democracia institucional (Polity IV), el tamaño de la población (en escala logarítmica), el PIB per cápita (escala logarítmica), el tipo de transición (pactada o por colapso del régimen anterior) y la posible existencia de conflictos armados.
+
+
+```{r cars}
+#### Cap 5. Justicia transicional y democracia ####
+
+m1 <- clogit(intento_golpe ~ enjuiciamientos_acum_l1 + amnistias_acum_l1  + comisiones_acum_l1 + tipo_transicion + conflicto_armado + polity2 + pib_log + poblacion_log + strata(id_transicion) - 1,
+             data = datos_tesis %>%
+               mutate(intento_golpe = if_else(intento_golpe >= 1, 1, 0)))
+
+m2 <- clogit(intento_golpe ~ sentencias_acum_l1 + amnistias_acum_l1  + comisiones_acum_l1 + tipo_transicion + conflicto_armado + polity2 + pib_log + poblacion_log + strata(id_transicion) - 1,
+             data = datos_tesis %>%
+               mutate(intento_golpe = if_else(intento_golpe >= 1, 1, 0)))
+
+m3 <- clogit(intento_golpe ~ enjuiciamientos_acum_l1 + amnistias_acum_l1  * comisiones_acum_l1 + tipo_transicion +conflicto_armado + polity2 + pib_log + poblacion_log + strata(id_transicion) - 1,
+             data = datos_tesis %>% 
+               mutate(intento_golpe = if_else(intento_golpe >= 1, 1, 0)))
+
+m4 <- clogit(intento_golpe ~ sentencias_acum_l1 * comisiones_acum_l1 + amnistias_acum_l1 + tipo_transicion + conflicto_armado + polity2 + pib_log + poblacion_log + strata(id_transicion) - 1,
+             data = datos_tesis %>% 
+               mutate(intento_golpe = if_else(intento_golpe >= 1, 1, 0)))
+
+modelsummary::modelsummary(list("Modelo 1" = m1, "Modelo 2" = m2, "Modelo 3" = m3, "Modelo 4" = m4),
+                           coef_rename = c("enjuiciamientos_acum_l1" = "Enjuiciamientos T-1",
+                                           "amnistias_acum_l1" = "Amnistías T-1",
+                                           "comisiones_acum_l1" = "Comisiones T-1",
+                                           "conflicto_armado" = "Conflicto armado",
+                                           "tipo_transicion" = "Tipo de transición: Ruptura (Ref: Negociada)",
+                                           "polity2" = "Polity II",
+                                           "pib_log" = "PIB pc (log)",
+                                           "poblacion_log" = "Población (log)",
+                                           "sentencias_acum_l1" = "Sentencias T-1",
+                                           "(Intercept)" = "Intercepto",
+                                           "comisiones_reco_enjuiciamiento_l1" = "Comisiones con recomendación de enjuiciamiento"),
+                           stars = c('*' = .1, '**' = .05, '***' = .01),
+                           title = "Tabla 2. Coeficientes de regresión (en log odds) de los intentos de golpes de estado en los procesos de transición democrática",
+                           gof_omit = "Std.Errors|RMSE",
+                           output = "flextable") %>%
+  theme_vanilla() %>%
+  autofit() %>%
+  fontsize(size = 9, part = "body")
+
+```
+
+
+De acuerdo con los resultados de los modelos 1 y 2 no existe correlación entre el uso de mecanismos judiciales de rendición de cuentas (juicios y sentencias) y la ocurrencia de uno o más intentos de golpes de estado en las democracias post autoritarias. Si bien el modelo 1 muestra que por cada juicio adicional en contra de violadores de derechos humanos las posibilidades de enfrentar uno o más intentos de golpes de estado en los años posteriores a la transición democrática aumentan en exp(0,048)-1 = 4,9%, y el modelo 2 muestra que por cada sentencia condenatoria adicional las posibilidades de enfrentar uno o más intentos de golpes de estado aumenta en exp(108)-1 = 11,4%; el valor p obtenido en ambos coeficientes de regresión es mayor a 0,1, por lo que no es posible afirmar que dicha contribución sea significativamente distinta a cero, asumiento un nivel de confianza estadística superior al 90%. Por tanto, la hipótesis 1a es rechazada. No existe evidencia estadística que sugiera que el aumento en el número de enjuiciamientos y condenas por violaciones de derechos humanos se asocie con la ocurrencia de uno o más intentos de golpes de estado en los procesos de transición democrática.
+
+Los resultados de los modelos 1 y 2 también muestran que no hay relación entre el uso de amnistías para violadores de derechos humanos y la ocurrencia de uno o más intentos de golpes de estado en las democracias post autoritarias. El aumento en el número de amnistías para violadores de derechos humanos se asocia con aumento en las posibilidades de enfrentar uno o más intentos de golpe de estado de exp(0,640)-1 = 89,6% en el modelo 1 y de exp(0,689)-1 = 99,2% en el modelo 2, pero ninguna de estas estimaciones es estadísticamente significativa a un nivel de confianza superior al 90% (p > 0,1). Por tanto, la hipótesis 1b es rechazada. No existe evidencia estadística que sugiera que el aumento en el número de amnistías para violadores de derechos humanos se asocie con una disminución de los intentos de golpes de estado en los procesos de transición democrática.
+
+Uno de los principales hallazgos de los modelos 1 y 2 es que el aumento en el número de comisiones de verdad realizadas durante el proceso de transición democrática se asocia negativamente con la ocurrencia de intentos de golpes de estado. En el modelo 1 las posibilidades de que un gobierno post autoritario enfrente un intento de golpe de estado se reducen en un exp(-0.847)-1 = 57,1% por cada comisión de verdad celebrada en las democracias post autoritarias, y en el modelo 2 esas posibilidades se reducen en exp(-0,829) = 56,4% por cada comisión de verdad celebrada en las transiciones. En ambos casos, el coeficiente de regresión estimado para las comisiones de verdad optiene un valor p inferior a 0,01, por lo que es posible afirmar, con un 99% de confianza estadística, que esta medida de justicia transicional, por si sola, contribuye significativamente a la prevención de los golpes de estado en las democracias post autoritarias.
+
+El modelo 3 y el modelo 4 nos muetran que el uso combinado de las comisiones de verdad con las amnistías y los enjuiciamientos durante un mismo año de transición no está correlacionado con los intentos de golpes de estado observados en las democracias post autoritarias. En el modelo 3 la posibilidades de que ocurra uno o más intentos de golpes de estado durante un año de transición aumenta en un exp(0.254)-1 = 28,9% cuando se combina el inicio de una nueva comisión de verdad con la dictación de nuevas amnistías para violadores de derechos humanos durante un mismo año de tranisción, y en el modelo 4 esa posibilidad disminuye en un exp(-0,662)-1 = 48,4%% cuando se combina el inicio de una nueva comisión de verdad con la dictación de nuevas condenas para violadores de derechos humanos durante un mismo año de transición. Sin embargo los coeficientes de regresión de estas combinaciones tienen un valor p superior a 0,1. Por tanto, las estimaciones derivadas de ellas no son estadísticamente significativas a un nivel de confianza superior al 90%. En base a esta evidencia se rechazan las hipótesis 1 c y 1d. El uso combinado de mecanismos de justicia transicional durante un mismo año de transición no aumenta ni disminuye la posibilidad de ocurran intentos de golpes de estado.
+
+
+# Cap 6. Justicia transicional y protección de los derechos humanos
+
+En este capítulo se ponen a prueba las hipótesis de los enfoques contructivista y holista de la justicia transicional, relacionadas con la contribución teórica de los juicios, amnistías y comisiones de verdad a la protección de los derechos humanos (de integridad física) en las democracias post autoritarias.
+
+Cómo se señaló en el marco teórico de esta tesis, el enfoque constructivista es la corriente de pensamiento que reune a los académicos que promueven los mecanismos de judiciales y no judiciales de rendición de cuentas para enfrentar las consecuencias de las violaciones de derechos humanos ocurridas en el pasado y contribuir a la no repetición (H. Kim & Sikkink, 2010). El enfoque maximalista sostiene que el enjuiciamiento penal de los criminales de lesa humanidad disuade a los futuros perpetradores de cometer actos de violencia contra la población civil y, por lo tanto, mejora la protección de los derechos de integridad física en las democracias post autoritarias (Sikkinnk, 2011). La falta de enjuiciamientos, por el contrario, re-producre una cultura de impunidad que erosiona la democracia, el estado de derecho y fomenta la justicia por mano propia.
+
+En cuando a los mecanismos no judiciales de rendición de cuentas, los académicos del enfoque constructivista sostienen que las comisiones de verdad también puede contribuir significativamente a la protección de los derechos humanos en las democracias post autoritarias, en la medida que aumenta los costos simbólicos para los agentes represores (H. Kim & Sikkink, 2010). En este sentido, el enfoque constructivista asume que las comisiones de verdad, al igual que los juicios, cumplen una poderosa función comunicativa en las sociedades con democracias post autoritarias, ya que pueden propagar el estigma asociado a las violaciones a los derechos humanos ocurridas en el pasado autoritario. Además, si una comisión de verdad culmina con la publicación de un informe recomendando el enjuiciamiento de los criminales de lesa humanidad, entonces podrá reforzar la percepción de que los agentes y las instituciones estatales serán penal y políticamente responsables en el futuro, contribuyendo así a la prevención de la violencia estatal en las democracias post-autoritarias (Dancy & Thoms, 2022).
+
+Desde el enfoque constructivista se formularon tres hipótesis de investigación que serán testeadas en este capítulo:
+
+-	Hipótesis 2 (a): El aumento en el número de enjuiciamientos y condenas por violaciones de derechos humanos estarán asociado con un aumento en el nivel de protección de los derechos de integridad física.
+
+-	Hipótesis 2 (b): El uso de comisiones de verdad estará asociado con un aumento en el nivel de protección de los derechos de integridad física.
+
+-	Hipótesis 2 (c): Las comisión de verdad que recomienda el enjuciamiento de violadores de derechos humanos estarán asociada con un aumento en el nivel de protección de los derechos de integridad física. 
+
+El enfoque holista es aquel que reúne a los académicos que sostienen que la contribución de los mecanismos de justicia transicional a la protección de los derechos humanos en las democracias post autoritarias depende, principalmente, de garantizar un equilibrio adecuado entre los impulsos de rendición de cuentas y los imperativos de estabilidad política que imponen los procesos de transición democrática. Desde esta perspectiva los académicos del enfoque holista sostienen que los juicios y las amnistías funcionan en combinación y de manera complementaria para mejorar los derechos humanos (Olsen, Payne, & Reiter, 2010, pp. 147–148). La estabilidad a corto plazo que brindan las amnistías no impide necesariamente el beneficio a largo plazo de la rendición de cuentas a través de los juicios y sentencia penales. La secuencia de la
+amnistía y los juicios a lo largo del tiempo proporciona mejoras los derechos humanos.
+
+Bajo este enfoque, las comisiones de verdad son vistas como medidas complementarias que contribuyen al equilibrio entre el impulso de rendición de cuentas y los imperativos de estabilidad política. Esto quiere decir que, por si solas, por sí solas, las comisiones de verdad no logran el objetivo de contribuir a la no repetición, ya que no son capaces de dar acceso a la justicia, ni de garantizar la estabilidad política de los procesos de transición. Sin embargo, cuando las comisiones van acompañadas de juicios y amnistías, pueden contribuir significativamente a la rendición de cuentas y la estabilidad política que brindan esos mecanismos a través del otorgamiento de incentivos para la colaboración de agentes del régimen anterior y la publicación de informes con recomendaciones para garantizar la no repetición de las violaciones a los derechos humanos (Olsen, Payne, Reiter, et al., 2010).
+
+Desde el enfoque holista es posible formular las siguientes hipótesis:
+
+-	Hipótesis 3 (a): La combinación de juicios y amnistías estará asociada con un aumento en el nivel de respeto de los derechos de integridad física.
+
+-	Hipótesis 3 (b): La combinación de juicios, amnistías y comisiones de verdad estará asociada con un aumento en el nivel de respeto de los derechos de integridad física.
+
+Para medir la protección de los derechos humanos en las democracias post autoritarias, utilicé los datos del Índice de Integridad Física Latente de Schnakenberg y Fariss (2018), disponibles en el sitio web "Our World in Data" de la Universidad de Oxforxd (Link). El Índice de Integridad Física Latente de Schnakenberg y Fariss es un indicador robusto de protección de los derechos humanos, que utiliza diferentes fuentes de información estadística y que cubre un total de 198 países, entre los años 1946 y 2019. El puntaje del Índice de Protección de Integridad Física Latente es calculado a través de un modelo de teoría dinámica de respuesta al ítem ordinal que reduce el sesgo de medición que generan los cambios en el nivel de información disponible y en los estándares de derechos humanos a lo largo del tiempo (Clark & Sikkink, 2013, pp. 175–177; Fariss, 2014). 
+
+Para medir el uso de mecanismos de justicia transicional utilicé recuentos de años de transición y medidas de recuento acumulativo de enjuiciamientos y amnistías para capturar el alcance relativo de los intentos de diferentes tipos de políticas de justicia a largo plazo. Los recuentos acumulativos son recuentos anuales de nuevos mecanismos de justicia transicional que se suman durante la duración de cada panel de transición. Estas variables de “stock” permiten medir la práctica continua, en lugar de correlaciones de año a año entre las nuevas políticas y los cambios en los resultados de derechos humanos. Construimos las principalescovariables de amnistía y enjuiciamiento contando el número de nuevas leyes de amnistía y nuevos enjuiciamientos que se instituyen en un año determinado. Contamos los veredictos de culpabilidad en el año en que la sentencia fue emitida por primera vez por un tribunal. Los acumulamos de la misma manera que las otras variables.
+
+Calculamos los estimadores de regresión por mínimos cuadrados ordinarios (MCO) de la integridad física utilizando modelos de efectos fijos. Incluimos una variable de control única que identifica cada transición democrática con un panel de datos dentro de la muestra. El uso de esta variable de control única se justifica porque, en toda la muestra, la demanda de justicia transicional se asocia con una peor protección de los derechos humanos. Esto quiere decir que las transiciones que inician con peores puntuaciones en el índice de protección de derechos humanos son también las que más usan amnistías, enjuiciamientos y comisiones durante el periodo post autoritario. Los efectos fijos explican incorporan esta tendencia en la estimación de los coeficientes de regresión al analizar la variación en los puntajes de protección de los derechos humanos dentro de las transiciones y no entre las transiciones.
+
+Según los datos del Índice de Integridad Física Latente de Schnakenberg y Fariss, las prácticas represivas de los regímenes democráticos post autoritarios se mantienen relativamente estables a lo largo del tiempo, con pocos cambios drásticos de un año a otro. Para controlar esto, se incluyó una medida rezagada de la variable dependiente en cada modelo y un parámetro de años de transición que da cuenta del tiempo transcurrido desde fin de la autocracia. Si el tiempo explica mejoras o disminuciones en la protección de derechos, se reflejará en el coeficiente de regresión de esta variable.
+
+La tabla 3 presenta los resultados de tres modelos de regresión que evalúan la contribución individual de los mecanismos de justicia transicional a la protección de los derechos humanos en las democracias post autoritarias. Los coeficientes positivos indican una mejora en el nivel de protección de los derechos de integridad física y los coeficientes negativos indican mayores niveles de violencia estatal o de desprotección de derechos. El Modelo 5 analiza la relación entre el uso de amnistías, enjuiciamientos y comisiones de verdad y el nivel de protección de los derechos humanos observado en los países en transición. El modelo 6 es similar al modelo 3, pero reemplaza las variables de enjuiciamientos y comisiones de verdad celebradas por las variables que dan cuenta del número de condenas acumuladas y de comisiones de verdad que finalizaron su investigación y comunicaron sus resultados. El modelo 7, por su parte, analiza la relación entre las recomendaciones de enjuiciamiento emitidas por las comisiones de verdad y el nivel de protección de los derechos humanos observado en las transiciones. En todos los modelos se incluyeron controles estadísticos del nivel de democracia institucional (Polity IV), el tamaño de la población (en escala logarítmica), el PIB per cápita (escala logarítmica), el tipo de transición (pactada o por colapso del régimen anterior) y la posible existencia de conflictos armados. Además, en todos los modelos las covariables fueron rezadas un año para eliminar la posibilidad de causalidad inversa en el cálculo e interpretación de los coeficientes.
+
+
+```{r}
+#### Cap 6. Justicias transicional y protección de los derechos humanos ####
+
+m5 <- plm(proteccion_ddhh ~ proteccion_ddhh_l1  + enjuiciamientos_acum_l1 + amnistias_acum_l1 + comisiones_acum_l1 + anos_transicion + tipo_transicion + polity2 + pib_log + poblacion_log + conflicto_armado  + intento_golpe,
+          data = datos_tesis,
+          index = c("id_transicion"),
+          model="within")
+
+m6 <- plm(proteccion_ddhh ~ proteccion_ddhh_l1  + sentencias_acum_l1 + amnistias_acum_l1 + comisiones_finalizadas_acum_l1 + anos_transicion + tipo_transicion + polity2 + pib_log + poblacion_log + conflicto_armado  + intento_golpe,
+          data = datos_tesis,
+          index = c("id_transicion"),
+          model="within")
+
+m7 <- plm(proteccion_ddhh ~ proteccion_ddhh_l1  + enjuiciamientos_acum_l1 + amnistias_acum_l1 + comisiones_finalizadas_acum_l1 + comisiones_reco_enjuiciamiento_l1 + anos_transicion + tipo_transicion + polity2 + pib_log + poblacion_log + conflicto_armado  + intento_golpe,
+          data = datos_tesis,
+          index = c("id_transicion"),
+          model="within")
+
+
+modelsummary(list("Modelo 5" = m5, "Modelo 6" = m6, "Modelo 7" = m7),
+             coef_rename = c("enjuiciamientos_acum_l1" = "Enjuiciamientos T-1",
+                             "proteccion_ddhh_l1" = "Protección de DDHH T-1",
+                             "amnistias_acum_l1" = "Amnistías T-1",
+                             "comisiones_acum_l1" = "Comisiones T-1",
+                             "conflicto_armado" = "Conflicto armado",
+                             "anos_transicion" = "Años de transición",
+                             "tipo_transicion" = "Tipo de transición",
+                             "polity2" = "Polity II",
+                             "pib_log" = "PIB pc (log)",
+                             "poblacion_log" = "Población (log)",
+                             "sentencias_acum_l1" = "Sentencias T-1",
+                             "intento_golpe" = "intentos de golpe de estado",
+                             "comisiones_finalizadas_acum_l1" = "Comisiones finalizadas",
+                             "comisiones_reco_enjuiciamiento_l1" = "Comisiones con recomendación de enjuiciamiento",
+                             "enjuiciamientos_acum_l1:amnistias_acum_l1" = "Enjuiciamientos x Amnistías"),
+             stars = c('*' = .1, '**' = .05, '***' = .01),
+             vcov = function(x){vcovBK(x, type = "HC1", cluster = "time")},
+             title = "Contribución de los mecanismos de justicia transicional a la protección de los DDHH en las transición democrática",
+             output = "flextable",
+             gof_omit = "Std.Errors|RMSE") %>%
+  autofit() %>%
+  theme_vanilla() %>%
+  fontsize(size = 9, part = "body")
+
+
+
+```
+
+Los resultados del modelo 5 indican que no existe relación entre el uso de enjuiciamientos penales y el nivel de protección de los derechos humanos observado en las democracias post autoritarias (β = 0,003; p > 0,1). Sin embargo, los resultados del modelo 6 muestran que la condena penal de criminales de lesa humanidad contribuye significativamente a la no repetición de las violaciones a los derechos humanos. En este último modelo, el aumento en el número de sentencias condenatorias para criminales de lesa humanidad se asocia con una mejora de 0,007 puntos en el nivel de protección de los derechos humanos observado en las democracias post autoritarias, asumiendo un nivel de confianza estadística superior al 90% (p < 0,1). Por tanto, la hipótesis 2 (a) del enfoque constructivista de la justicia transicional debe ser parcialmente aceptada, ya que el enjuiciamiento penal mejora los niveles de protección de los derechos humanos sólo cuando logra la condena de los criminales de lesa humanidad.
+
+Además, los resultados de los modelos 5 y 6 muestran que las comisiones de verdad contribuyen, por si solas, a la no repetición de las violaciones a los derechos humanos. En ambos modelos se obtienen coeficientes de regresión para las comisiones de verdad que son estadísticamente significativos a un nivel de confianza estadística superior al 99% (p < 0,01). En el modelo 5 la realización de una comisión de verdad durante el proceso de transición democrática se asocia con un mejora 0,020 puntos en el índice de protección de los derechos humanos, y en el modelo 6 la finalización de una comisión de verdad se asocia con una mejora en la protección de los derechos humanos equivalente a los 0,077 puntos. Por tanto, la hipótesis 2 (b) del enfoque contructivista de la justicia transicional es aceptada. El uso de medidas no jusdiciales de rendición de cuentas por crímines de lesa humanidad contriuye significativamente a la protección de los derechos de integridad física en las democracias post autoritarias.
+
+En cuanto al uso de recomendaciones, los resultados del modelo 7 muestran que las recomendaciones de enjuiciamientos emitidas por las comisiones de verdad no contribuyen a la protección de los derechos humanos. De hecho, el coeficiente de regresión estimado para esta variable se asocia con una disminución de 0,23 puntos en el niveles de protección de los derechos humanos que no es estadísticamente significativa (p > 0,1). Por tanto, la hipótesis 2 (c) del enfoque contructivista de la justicia transicional es rechazada. No hay evidencia que sugiera que la recomendación de enjuiciamiento de criminales de lesa humanidad mejore los niveles de protección de los derechos humanos en las democracias post autoritarias.
+
+La tabla 4 presenta los resultados de los modelos 8 y 9, que ponen a prueba las hipótesis del enfoque holista de la justicia transicional. El modelo 8 examina la relación entre el uso combinado de enjuiciamientos y amnistías, y los niveles de protección de los derechos humanos alcanzados por las democracias post autoritarias. El modelo 9 es igual al modelo 8, pero evalua la contribución del uso combinado de los tres mecanismos de justicia transicional (amnistías, comisiones y enjuiciamientos) a la protección de los derechos humanos en las democracias post autoritarias.
+
+```{r}
+
+m8 <- plm(proteccion_ddhh ~ proteccion_ddhh_l1  + enjuiciamientos_acum_l1 * amnistias_acum_l1 + comisiones_acum_l1 + anos_transicion + tipo_transicion + polity2 + pib_log + poblacion_log + conflicto_armado  + intento_golpe,
+          data = datos_tesis,
+          index = c("id_transicion"),
+          model="within")
+
+m9 <- plm(proteccion_ddhh ~ proteccion_ddhh_l1  + enjuiciamientos_acum_l1 * amnistias_acum_l1 * comisiones_acum_l1 + anos_transicion + tipo_transicion + polity2 + pib_log + poblacion_log + conflicto_armado  + intento_golpe,
+          data = datos_tesis,
+          index = c("id_transicion"),
+          model="within")
+
+modelsummary(list("Modelo 8" = m8, "Modelo 9" = m9),
+             coef_rename = c("enjuiciamientos_acum_l1" = "Enjuiciamientos T-1",
+                             "proteccion_ddhh_l1" = "Protección de DDHH T-1",
+                             "amnistias_acum_l1" = "Amnistías T-1",
+                             "comisiones_acum_l1" = "Comisiones T-1",
+                             "conflicto_armado" = "Conflicto armado",
+                             "anos_transicion" = "Años de transición",
+                             "tipo_transicion" = "Tipo de transición",
+                             "polity2" = "Polity II",
+                             "pib_log" = "PIB pc (log)",
+                             "poblacion_log" = "Población (log)",
+                             "sentencias_acum_l1" = "Sentencias T-1",
+                             "intento_golpe" = "intentos de golpe de estado",
+                             "comisiones_finalizadas_acum_l1" = "Comisiones finalizadas",
+                             "comisiones_reco_enjuiciamiento_l1" = "Comisiones con recomendación de enjuiciamiento",
+                             "enjuiciamientos_acum_l1:amnistias_acum_l1" = "Enjuiciamientos x Amnistías"),
+             stars = c('*' = .1, '**' = .05, '***' = .01),
+             vcov = function(x){vcovBK(x, type = "HC1", cluster = "time")},
+             title = "Contribución de los mecanismos de justicia transicional a la protección de los DDHH en las transición democrática",
+             output = "flextable",
+             gof_omit = "Std.Errors|RMSE") %>%
+  autofit() %>%
+  theme_vanilla() %>%
+  fontsize(size = 9, part = "body")
+
+
+```
+
+
+
+
+

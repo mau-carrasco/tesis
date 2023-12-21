@@ -1,0 +1,240 @@
+---
+title: "Ensayo tesis parte 1: Juicios y Amnistías por violaciones de derechos humanos en democracias postautoritarias"
+author: "Mauricio Carrasco"
+date: "`r Sys.Date()`"
+output:
+  word_document: default
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F, message = F, warning = F, fig.height = 4, fig.width = 8, results='asis')
+
+library(kableExtra)
+library(tidyverse)
+library(tidymodels)
+library(papaja)
+library(haven)
+
+library(plm)
+library(pglm)
+library(survival)
+library(sandwich)
+library(modelsummary)
+barsbargains <- read_dta("datos/barsbargains_replication/barsbargains.dta") %>% rename("break_d" = "break")
+
+```
+
+# Introducción
+
+Actualmente, la justicia transicional goza de gran popularidad y es promovida a nivel mundial por organismos internacionales y organizaciones no gubernamentales para tratar con los pasados violentos y autoritarios de los países y evitar futuras violaciones de derechos humanos.
+
+Con la finalidad de contribuir a la consecusión del primer objetivo específico de la tesis, analizaré la eficacia de las medidas judiciales de justicia transicional sobre el nivel de respeto a los derechos humanos.
+
+En la primera parte, analizaré la relación entre la implementación de juicios y/o leyes de amnistias por delitos de lesa humanidad y el nivel de respeto a los derechos humanos (de integridad y civiles y políticos) en los países post autoritarios y post guerra civil.
+
+En la segunda parte, analizaré la relación entre la implementación de comisiones de verdad y el nivel de respeto a los derechos humanos observado en los países. Para ello, se desagregarán las operaciones de la CV en indicadores concretos que dan cuenta de la publicación de informes oficiales y de la formulación de recomendaciones de reformas que pretenden contribuir a la no repetición. Todo esto con la finalidad de distinguir a las CV según su capacidad de comunicar las verdades y de contribuir al enjuiciamiento de críminales de lesa humanidad.
+
+# Datos
+
+La muestra incluye paneles de "años después" de 111 transiciones democráticas únicas definidas por Polity IV en ochenta y nueve países entre 1970 y 2010. A estos los llamamos paneles de transición. La unidad de observación para el análisis es el año de transición del país.
+
+# Parte 1: Juicios y Amnistías
+
+
+```{r}
+coeff <- 10
+
+barsbargains %>%
+  select(year, trtpros, amnesty_fit) %>%
+  group_by(year) %>%
+  summarize(juicios = sum(trtpros),
+            amnistias = sum(amnesty_fit)) %>%
+  mutate(sumatoria_juicios = cumsum(juicios),
+         sumatoria_amnistias = cumsum(amnistias)) %>%
+  ggplot(aes(x = year)) +
+  geom_line(aes(y = sumatoria_amnistias*coeff, colour = "Amnistías"), linetype = 1) +
+  geom_line(aes(y = sumatoria_juicios, colour = "Juicios"), linetype = 2) +
+  scale_y_continuous(name = "Juicios",
+                     sec.axis = sec_axis(~./coeff, name="Amnistías")) +
+  labs(title = "Tendencias mundiales de la Justicia Transicional",
+       subtitle = "1970-2010",
+       x = "Años") +
+  scale_colour_brewer(palette = "Set1") +
+  theme_apa(base_size = 10) +
+  theme(legend.position = "bottom",
+        legend.title = element_blank())
+```
+
+
+De los 111 regímenes de transición en la base de datos, sesenta y seis persiguieron al menos un enjuiciamiento y cuarenta y uno aprobaron al menos una ley de amnistía. Veintiocho regímenes emplearon alguna combinación de juicios y amnistías, mientras que treinta y dos no usaron ninguna.
+
+
+```{r Tabla 1}
+barsbargains %>%
+  select(dtr_id, ccode) %>%
+  summarise("Observaciones" = n(),
+            "Transiciones" = n_distinct(dtr_id),
+            "Países" = n_distinct(ccode)) %>%
+  pivot_longer(cols = 1:3, names_to = "Niveles", values_to = "n")
+```
+
+
+
+```{r Tabla 2}
+
+barsbargains %>% 
+  group_by(dtr_id) %>%
+  summarise(
+    juicios = max(trt1), 
+            amnistias = max(ambin)
+    ) %>%
+  select(2:3) %>%
+  table() %>%
+  as_tibble() %>%
+  pivot_wider(
+    names_from = amnistias,
+    values_from = n
+    ) %>%
+  janitor::adorn_totals(c("col", "row"))
+
+```
+
+```{r tabla 3}
+
+barsbargains %>%
+  select(dtr_id, ambin, trt1, amnesty_fit, trtpros) %>%
+  summarise("Juicios en el mundo" = sum(trtpros),
+            "Amnistías en el mundo" = sum(amnesty_fit),
+            "Juicios en países con amnistías" = sum(trtpros[ambin ==1]),
+            "Amnistías en países con juicios" = sum(amnesty_fit[trt1 == 1])) %>%
+  pivot_longer(cols = 1:4)
+
+```
+
+
+## Modelos de violencia estatal unilateral
+
+Primero analizamos si los enjuiciamientos, al arriesgarse a una reacción violenta, se asocian con atrocidades a corto plazo (Hipótesis 1a y 1b). Para ello, examinamos la relación entre la iniciación de enjuiciamientos y todos los incidentes de "violencia unilateral" en el país, que es "el uso de la fuerza armada por parte del gobierno de un estado o por un grupo formalmente organizado contra la población civil, que resulta en al menos [veinticinco] muertes por año ”(Eck y Hultman 2007, 234–36). Si los juicios penales corren el riesgo de sufrir violencia masiva, como predicen los conservadores, entonces el número de juicios iniciados en cualquier año debería correlacionarse con la violencia unilateral en el corto plazo. Para probar esta posibilidad, ejecutamos dos regresiones binomiales negativas de efectos fijos.
+
+```{r}
+datos_modelo <-barsbargains %>%
+  group_by(dtr_id, year) %>%
+  select(totosv, trtpros_l1, fitam_l1, upcwar, polity2, loggdp, poplog, dtr_id, year)
+
+m1 <- pglm(totosv ~ trtpros_l1 + fitam_l1  + upcwar + polity2 + loggdp + poplog,
+          data = datos_modelo, index = c("dtr_id", "year"), family = negbin,
+          model = "within")
+
+m2 <- clogit(totosv ~ trtpros_l1 + fitam_l1  + polity2 + loggdp + poplog + strata(dtr_id) - 1,
+             data = datos_modelo %>%
+               filter(upcwar == 1) %>%
+               mutate(totosv = if_else(totosv >= 1, 1, 0)))
+
+
+modelsummary::modelsummary(list(m1,m2), stars = T)
+```
+La tabla 3 muestra los resultados de estos dos modelos. El primero examina todas las transiciones. El segundo modelo examina solo la submuestra de transiciones democráticas que experimentaron una guerra civil después de la transicióny, debido a que la violencia unilateral ocurre con mayor frecuencia en estados con conflictos organizados.
+Como se puede apreciar, no existe una correlación estadísticamente significativa entre los enjuiciamientos (retrasados un año) y los actos atroces. De hecho, en toda la muestra, los juicios se correlacionan negativamente con el número de actos de violencia unilateral, pero solo en el nivel 0,10. La Guerra civil también es un predictor confiable de atrocidades; la existencia de una guerra civil aumenta el recuento de actos atroces en casi un 150 por ciento. En la submuestra que examina solo las transiciones democráticas posteriores a la guerra civil, los juicios son estadísticamente insignificante, mientras que la amnistía está correlacionada negativamente a un nivel de 0.10
+
+```{r, fig.height= 4, fig.width= 10}
+texreg::plotreg(list(m1),
+                ci.level = 0.9,
+                ci.inner = 0.1,
+                custom.coef.names = c("Intercepto", "Juicios", "Amnistías", 
+                                     "Guerra Civil", "Polity II", "PIB (ln)", "Pop (ln)"),
+                omit.coef = "Intercepto") +
+  labs(title = "Efectos a corto plazo de los juicios y amnistías sobre la ocurrencia de ataques generalizados a la población civil",
+       subtitle = "En los países que experimentaron transiciones políticas entre 1970 y 2010") +
+  theme_apa(base_size = 10)
+```
+
+
+
+## Modelos del respeto a los derechos humanos (integridad y CP)
+
+La tabla 4 informa los resultados de cinco modelos que evalúan los efectos a largo plazo de los procesos penales y las amnistías en los resultados de derechos humanos (integridad física). Los coeficientes positivos indican mayor protección y los coeficientes negativos indican más violaciones, es decir, menor protección. El modelo 3 tiene el mayor número de observaciones porque incluye solo parámetros de enjuiciamientos y amnistías, junto con protección derechos de integridad (t–1) para controlar la dependencia temporal o la rigidez de las prácticas represivas. De acuerdo con los resultados de este modelo los enjuiciamientos se correlacionan positivamente con las protecciones de integridad física de manera estadísticamente significativa, mientras que las amnistías no lo hacen.
+
+
+```{r}
+
+# Match data
+library(MatchIt)
+
+barsbargains <- barsbargains %>%
+  mutate(
+    prehrcat = case_when(prehr10 <= -1.29 ~ 1,
+                         prehr10 > -1.29 & prehr10 <= -.745 ~ 2,
+                         prehr10 >- .745 & prehr10 <= .006 ~ 3,
+                         prehr10>.006 ~ 4),
+    rtpercat = case_when(prehr10 <= .42 ~ 1,
+                         prehr10 > .42 & prehr10 <= .62 ~ 2,
+                         prehr10 > .62 & prehr10 <= .92 ~ 2,
+                         prehr10 > .92 ~ 1),
+    dtr_id = as.factor(dtr_id))
+
+barsbargains <- barsbargains %>%
+  drop_na(trtst, prehrcat, rtpercat, break_d, ji_keith)
+
+modelo_coincidencia <- matchit(trtst ~ prehrcat + rtpercat + break_d + ji_keith, data = barsbargains, method = "exact")
+
+datos_modelo <- match.data(modelo_coincidencia)
+
+
+```
+
+El modelo 4 es el mismo, pero incluye los controles coincidentes, así como otros factores de confusión que los académicos casi siempre incorporan en el "modelo estándar de represión política" ( Keith 2012 ). Retrasamos cada covariable en los modelos un año para eliminar la posibilidad de causalidad inversa. El Modelo 4 se hace eco de los hallazgos del Modelo 3. El coeficiente de enjuiciamientos es ligeramente mayor en magnitud y sigue siendo estadísticamente significativo al nivel de 0,05.
+
+El Modelo 5 es una copia del Modelo 4, pero incluye un término de interacción entre enjuiciamientos y amnistías para dar cuenta de la predicción holística de que los dos tipos de mecanismos de justicia transicional se complementan entre sí. Hay poca evidencia de tal interacción en los datos de panel transnacionales. La interacción es en realidad negativa y estadísticamente significativa, aunque el efecto es muy pequeño.
+
+Los modelos 6 y 7 utilizan la misma especificación que los modelos totalmente controlados anteriores, pero incluyen un recuento de los veredictos de culpabilidad en lugar de un recuento de los procesamientos iniciados. De acuerdo con la lógica de la disuasión, los veredictos de culpabilidad deberían tener un impacto más significativo en las futuras prácticas represivas. Encontramos apoyo para esta afirmación. El coeficiente de veredictos de culpabilidad en el Modelo 6 es mayor que los procesamientos en el Modelo 4. Como antes, la interacción entre los veredictos de culpabilidad y las amnistías en el Modelo 7 es significativa y negativa, aunque sustancialmente pequeña.
+
+
+```{r, results='asis'}
+
+modelo3 <- lm(physint ~ physint_l1 + trtsum_l1 + famsum_l1 + as.factor(dtr_id),
+              data = datos_modelo,
+              weights = weights,
+              vcov = function(x){vcovBK(x, type = "HC1", cluster = "time")})
+
+modelo4 <- lm(physint ~ physint_l1 + trtsum_l1 + famsum_l1 + prehr10 + rtper + break_d + ji_keith + upcwar + dtr_t2 + polity2 + loggdp + poplog + as.factor(dtr_id),
+               data = datos_modelo, 
+               weights = weights,
+                vcov = function(x){vcovBK(x, type = "HC1", cluster = "time")})
+
+modelo5 <- lm(physint ~ physint_l1 + trtsum_l1 + famsum_l1 + trt_amsum + prehr10 + rtper + break_d + ji_keith + upcwar + dtr_t2 + polity2 + loggdp + poplog + as.factor(dtr_id), 
+              data = datos_modelo, 
+              weights = weights,
+              vcov = function(x){vcovBK(x, type = "HC1", cluster = "time")})
+
+modelo6 <- lm(physint ~ physint_l1 + trtgsum_l1 + famsum_l1 + prehr10 + rtper + break_d + ji_keith + upcwar + dtr_t2 + polity2 + loggdp + poplog + as.factor(dtr_id), 
+              data = datos_modelo, 
+              weights = weights,
+              vcov = function(x){vcovBK(x, type = "HC1", cluster = "time")})
+
+modelo7 <- lm(physint ~ physint_l1 + trtgsum_l1 + famsum_l1 + trtg_amsum +prehr10 + rtper + break_d + ji_keith + upcwar + dtr_t2 + polity2 + loggdp + poplog + as.factor(dtr_id), 
+              data = datos_modelo, 
+              weights = weights,
+              vcov = function(x){vcovBK(x, type = "HC1", cluster = "time")})
+
+modelsummary::modelsummary(list("Modelo 3" = modelo3,
+                                "Modelo 4" = modelo4,
+                                "Modelo 5" = modelo5,
+                                "Modelo 6" = modelo6,
+                                "Modelo 7" = modelo7),
+                           coef_omit = "as.factor",
+                           stars = c('*' = .1, '**' = .05, '***' = .01),
+                           coef_rename = c("physint_l1" = "Integridad Física (t-1)",
+                                           "trtsum_l1" = "Juicios (t-1)",
+                                           "famsum_l1" = "Amnistías (t-1)",
+                                           "prehr10" = "Protección previa DDHH",
+                                           "rtper" = "Juicios regionales"),
+                           title = "Efectos a largo plazo de los juicios y amnistías sobre el nivel de respeto a los derechos humanos observado en las democracias post-autoritarias")
+
+
+```
+
+# Parte 2: Comisiones de verdad y sus operaciones
+

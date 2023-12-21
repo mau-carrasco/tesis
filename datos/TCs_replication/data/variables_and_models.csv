@@ -1,0 +1,75 @@
+var,type,lag,source,label,t1,t10,t11,t12,t13,t14,t15,t16,t17,t18,t19,t2,t20,t21,t22,t23,t24,t25,t26,t27,t28,t29,t3,t30,t31,t32,t33,t34,t35,t36,t37,t38,t39,t4,t40,t41,t42,t43,t44,t45,t46,t47,t48,t49
+country,ID,0,coded,Country,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+year,ID,0,coded,Year,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+firstyear,ignore,0,coded,first year,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+region,ignore,0,coded,Region,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+dem_bmr,dummy,0,BMR,BMR Democracy Indicator,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+demtrans_bmr,category,0,BMR,BMR Transition Indicator,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+transition,dummy,0,coded (BMR),condition: transitioned to democracy,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+demstate,dummy,0,coded (BMR),condition: new state with democracy,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+demconfl,dummy,0,coded (UCDP),condition: democracy with conflict,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+tcs_sample_first_year,continuous,0,coded,sample first year,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+tcs_sample,dummy,0,coded,sample for TCs analyses,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+v2x_polyarchy,continuous,1,VDem,Electoral democracy,y,y,y,y,y,y,y,y,y,y,y,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+v2x_polyarchy_sd,continuous,0,VDem,Electoral democracy (SD),,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+v2x_polyarchy_firstyear,continuous,0,coded (V-Dem),Electoral democracy (sample first year),,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+v2xel_frefair,continuous,1,VDem,Clean elections,y,y,y,y,y,y,y,y,y,y,y,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+v2xel_frefair_sd,continuous,0,VDem,Clean elections (SD),,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+v2xel_frefair_firstyear,continuous,0,coded (V-Dem),Clean elections (sample first year),,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+v2x_frassoc_thick,continuous,1,VDem,Freedom of association,y,y,y,y,y,y,y,y,y,y,y,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+v2x_frassoc_thick_sd,continuous,0,VDem,Freedom of association (SD),,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+v2x_frassoc_thick_firstyear,continuous,0,coded (V-Dem),Freedom of association (sample first year),,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+v2x_liberal,continuous,1,VDem,Liberal component,,,,,,,,,,,,y,y,y,y,y,y,y,y,y,y,y,,,,,,,,,,,,,,,,,,,,,,
+v2x_liberal_sd,continuous,0,VDem,Liberal component (SD),,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+v2x_liberal_firstyear,continuous,0,coded (V-Dem),Liberal component (sample first year),,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+v2jureform,continuous,1,VDem,Judicial reform,,,,,,,,,,,,y,y,y,y,y,y,y,y,y,y,y,,,,,,,,,,,,,,,,,,,,,,
+v2jureform_sd,continuous,0,VDem,Judicial reform (SD),,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+v2jureform_firstyear,continuous,0,coded (V-Dem),Judicial reform (sample first year),,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+v2x_partip,continuous,1,VDem,Participatory component,,,,,,,,,,,,,,,,,,,,,,,y,y,y,y,y,y,y,y,y,y,y,,,,,,,,,,,
+v2x_partip_sd,continuous,0,VDem,Participatory component (SD),,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+v2x_partip_firstyear,continuous,0,coded (V-Dem),Participatory component (sample first year),,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+v2cltort,continuous,1,VDem,Torture,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,y,y,y,y,y,y,y,y,y,y,y
+v2cltort_sd,continuous,0,VDem,Torture (SD),,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+v2cltort_firstyear,continuous,0,coded (V-Dem),Torture (sample first year),,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+v2clkill,continuous,1,VDem,Extrajudicial killings,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,y,y,y,y,y,y,y,y,y,y,y
+v2clkill_sd,continuous,0,VDem,Extrajudicial killings (SD),,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+v2clkill_firstyear,continuous,0,coded (V-Dem),Extrajudicial killings (sample first year),,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+v2csreprss,continuous,1,VDem,CSO repression,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,y,y,y,y,y,y,y,y,y,y,y
+v2csreprss_sd,continuous,0,VDem,CSO repression (SD),,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+v2csreprss_firstyear,continuous,0,coded (V-Dem),CSO repression (sample first year),,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+latentmean_fariss,continuous,1,Fariss,Latent physical integrity,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,y,y,y,y,y,y,y,y,y,y,y
+latentsd_fariss,continuous,0,Fariss,Latent physical integrity (SD),,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+latentmean_fariss_firstyear,continuous,0,coded (Fariss),Latent physical integrity (sample first year),,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+cumulative_fariss,continuous,1,coded,LPI cumulative mean,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+gdppc_const_wdi,continuous,1,WDI,GDP per capita (logged),x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+pop_wdi,continuous,1,WDI,Population size (logged),x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+internal,category,1,UCDP,Internal armed conflict,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+internal_none,dummy,0,coded (UCDP),No internal conflict,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref
+internal_conflict,dummy,0,coded (UCDP),Internal conflict,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+internal_war,dummy,0,coded (UCDP),Internal war,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+v2cseeorgs,continuous,1,VDem,CSO entry and exit,,,,,,,,,,,,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+v2cseeorgs_sd,continuous,0,VDem,CSO entry and exit (SD),,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+v2csprtcpt,continuous,1,VDem,CSO participatory environment,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,,,,,,,,,,,,,,,,,,,,,,
+v2csprtcpt_sd,continuous,0,VDem,CSO participatory environment (SD),,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+dem_time,continuous,1,coded (BMR),Years since democratic transition,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+trans_type,category,1,coded (Dancy),Transition type,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+trans_type_negotiated,dummy,0,coded (Dancy),Transition type: negotiated,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+trans_type_new,dummy,0,coded (Dancy),Transition type: new state,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref
+trans_type_none,dummy,0,coded (Dancy),no transition type,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref,ref
+trans_type_ruptured,dummy,0,coded (Dancy),Transition type: ruptured,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x
+tc_ongoing_sum,dummy,1,TJRC,number of ongoing TCs,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+tc_past_sum,dummy,1,coded (TJRC),number of TCs completed in past,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+tc_hashadany_all,dummy,1,coded (TJRC),has had TC in operation,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+tc_hashadany,dummy,1,coded (TJRC),"has had ""transitional"" TC in operation",w,,,,,,,,,,,w,,,,,,,,,,,w,,,,,,,,,,,w,,,,,,,,,,
+tc_finalreport_first,dummy,1,coded (TJRC),TC final report (first),,w,,,,,,,,,,,w,,,,,,,,,,,w,,,,,,,,,,,w,,,,,,,,,
+tc_finalreport,dummy,1,coded (TJRC),TC final report,,,w,,,,,,,,,,,w,,,,,,,,,,,w,,,,,,,,,,,w,,,,,,,,
+tc_publicreport_first,dummy,1,coded (TJRC),TC public report (first),,,,w,,,,,,,,,,,w,,,,,,,,,,,w,,,,,,,,,,,w,,,,,,,
+tc_publicreport,dummy,1,coded (TJRC),TC public report,,,,,w,,,,,,,,,,,w,,,,,,,,,,,w,,,,,,,,,,,w,,,,,,
+tc_recommendations_first,dummy,1,coded (TJRC),TC recommendations (first),,,,,,w,,,,,,,,,,,w,,,,,,,,,,,w,,,,,,,,,,,w,,,,,
+tc_recommendations,dummy,1,coded (TJRC),TC recommendations,,,,,,,w,,,,,,,,,,,w,,,,,,,,,,,w,,,,,,,,,,,w,,,,
+tc_prosecute_first,dummy,1,coded (TJRC),TC recommends prosecutions (first),,,,,,,,w,,,,,,,,,,,w,,,,,,,,,,,w,,,,,,,,,,,w,,,
+tc_prosecute,dummy,1,coded (TJRC),TC recommends prosecutions,,,,,,,,,w,,,,,,,,,,,w,,,,,,,,,,,w,,,,,,,,,,,w,,
+tc_reform_first,dummy,1,coded (TJRC),TC recommends reforms (first),,,,,,,,,,w,,,,,,,,,,,w,,,,,,,,,,,w,,,,,,,,,,,w,
+tc_reform,dummy,1,coded (TJRC),TC recommends reforms,,,,,,,,,,,w,,,,,,,,,,,w,,,,,,,,,,,w,,,,,,,,,,,w
+TC_reg_density,continuous,1,coded (TJRC),regional TC diffusion,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+TC_reg_density_sample,continuous,1,coded (TJRC),"regional ""transitional"" TC diffusion",z,z,z,z,z,z,z,z,z,z,z,z,z,z,z,z,z,z,z,z,z,z,z,z,z,z,z,z,z,z,z,z,z,z,z,z,z,z,z,z,z,z,z,z

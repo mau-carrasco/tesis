@@ -1,0 +1,27 @@
+---
+lang: es
+output:
+  word_document:
+    reference_docx: formato_1.docx
+    toc: yes
+    fig_caption: yes
+toc-title: Tabla de contenido
+csl: apa.csl
+bibliography: bibliografia.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F)
+```
+
+# III. Objetivos de investigación
+
+En el capítulo anterior, se planteó un diseño de investigación enfocado en desarrollar un marco analítico riguroso para evaluar la contribución de los mecanismos de justicia transicional a la democracia y la protección de los derechos humanos en América Latina y el Caribe. Esta propuesta busca superar las inconsistencias y limitaciones encontradas en la literatura previa sobre el tema. Para lograrlo, se propone la selección de indicadores adecuados, la consideración de las diferencias contextuales y de modalidades de represión, y la exploración del impacto de estos mecanismos en la prevención de golpes de Estado y la protección de los derechos de integridad física de las personas. 
+
+En este capítulo, se establece que el objetivo principal de la tesis es evaluar la contribución de los mecanismos de justicia transicional a la prevención de golpes de estado y la protección de los derechos humanos en los países de América Latina y el Caribe que experimentaron transiciones democráticas entre los años 1970 y 2010. Los objetivos específicos son:
+
+a) Analizar la contribución de los enjuiciamientos, amnistías y comisiones de la verdad
+a la prevención de golpes de estado en los países de América Latina y el Caribe durante los años posteriores a la primera transición democrática experimentada en el periodo 1970-2010.
+b) Analizar la contribución de los enjuiciamientos, amnistías y comisiones de la verdad a la protección de los derechos humanos de integridad física en los países de América Latina durante los años posteriores a la primera transición democrática experimentada en el periodo 1970-2010.
+
+Los objetivos formulados se limitan al periodo 1970-2010, porque los datos disponibles sobre enjuiciamientos, setencias, amnistías y comisiones de la verdad por violaciones a los derechos humanos en los países sólo han sido sistematizados a nivel regional para este periodo en los proyectos académicos anteriores [@Dancy2019; @Dancy2022]. Esto significa que el análisis propuesto en la tesis no puede abordar eventos más recientes o futuros de justicia trasicional y por tanto, su vínculo con la prevención de golpes de estado y la protección de los derechos humanos en periodos posteriores. Sin embargo, los datos disponibles aún son útiles para analizar sociológicamente la contribución histórica de la justicia transicional en la región.
