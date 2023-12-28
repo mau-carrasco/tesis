@@ -14,7 +14,7 @@ bibliography: bibliografia.bib
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# VII. Conclusiones
+# CONCLUSIONES
 
 El objetivo general de este estudio de tesis fue evaluar la contribución de los mecanismos de justicia transicional a la prevención de golpes de estado y la protección de los derechos humanos de integridad física en los países de América Latina y el Caribe que experimentaron transiciones democráticas entre los años 1970 y 2010. Esta evaluación se hizo en función de las hipótesis formuladas por los enfoques teóricos de la justicia transicional sobre el impacto de los enjuiciamientos, amnistías y comisiones de la verdad en los regímenes post autoritarios: el enfoque realista, el enfoque constructivista y el enfoque holista.
 

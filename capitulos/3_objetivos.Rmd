@@ -14,7 +14,7 @@ bibliography: bibliografia.bib
 knitr::opts_chunk$set(echo = F)
 ```
 
-# III. Objetivos de investigación
+# OBJETIVOS DE INVESTIGACIÓN
 
 En el capítulo anterior, se planteó un diseño de investigación enfocado en desarrollar un marco analítico riguroso para evaluar la contribución de los mecanismos de justicia transicional a la democracia y la protección de los derechos humanos en América Latina y el Caribe. Esta propuesta busca superar las inconsistencias y limitaciones encontradas en la literatura previa sobre el tema. Para lograrlo, se propone la selección de indicadores adecuados, la consideración de las diferencias contextuales y de modalidades de represión, y la exploración del impacto de estos mecanismos en la prevención de golpes de Estado y la protección de los derechos de integridad física de las personas. 
 

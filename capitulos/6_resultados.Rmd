@@ -32,14 +32,14 @@ set_flextable_defaults(
   font.family = "Garamond",
   theme_fun = "theme_zebra")
 
-datos_tesis <- read_rds("~/GitHub/tesis_magister/datos/datos_tesis.rds")
-juicios <- read_dta("~/GitHub/tesis_magister/datos/barsbargains_replication/barsbargains.dta")
+datos_tesis <- read_rds("~/GitHub/tesis/datos/datos_tesis.rds")
+juicios <- read_dta("~/GitHub/tesis/datos/barsbargains_replication/barsbargains.dta")
 datos_tesis <- datos_tesis %>% left_join(juicios %>% select(pais = country, anno = year, codigo_transicion = dtr_id, amnistias_dummy = ambin))
 ```
 
-# VI RESULTADOS
+# RESULTADOS
 
-## VI. 1. Justicia transicional y golpes de estado
+## 1. Justicia transicional y golpes de estado
 
 Como se señaló anteriormente, este apartado ponen a prueba las hipótesis del enfoque realista de la justicia transicional, promovido por los académicos que cuestionan la adopción de políticas de rendición de cuentas penales en derechos humanos que puedan alterar el equilibrio de los *intereses políticos dominantes* en la transición y poner en riesgo la nueva democracia [@Snyder2003; @Vinjamuri2015].
 
@@ -132,7 +132,7 @@ En término globales, los resultados obtenidos contravienen los planteamientos d
 
 Los modelos de regresión también muestran que un aumento en el número de comisiones de la verdad se asocia negativamente con la probabilidad de golpes de estado en las democracias post autoritarias en América Latina y el Caribe. Este hallazgo demuestra que la contribución de las comisiones de la verdad a la prevención de golpes de estado radica en su capacidad para exponer y condenar públicamente los crímenes del pasado, lo que puede desincentivar la acción de sectores militares descontentos y fortalecer la legitimidad de la democracia emergente. Por tanto, la evidencia obtenida desafía la idea realista de que la exposición pública de las violaciones a los derechos humanos a través de comisiones de la verdad puede generar inestabilidad y aumentar el riesgo de regresiones autoritarias si no se combina con una política de perdón institucional.
 
-## VI. 2. Justicia transicional y protección de los derechos humanos
+## 2. Justicia transicional y protección de los derechos humanos
 
 En este acápite se ponen a prueba las hipótesis de los enfoques contructivista y holista de la justicia transicional, relacionadas con la contribución teórica de los juicios, amnistías y comisiones de verdad a la protección de los derechos humanos (de integridad física) en las democracias post autoritarias.
 

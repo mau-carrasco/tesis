@@ -15,13 +15,12 @@ knitr::opts_chunk$set(echo = F, message = F, warning = F, fig.height = 3, fig.wi
 
 ```
 
-# II. Estado del arte y problema de estudio
+# ESTADO DEL ARTE Y PROBLEMA DE ESTUDIO
 
 En el siguiente capítulo, se analiza la literatura existente sobre jusiticia transicional, democracia y protección de los derechos humanos en las democracias post autoritarias, con un enfoque particular en el impacto de los enjuiciamientos, amnistías y comisiones de la verdad. Para lograr esto, se revisan los estudios clave del campo y se destacan las razones detrás de las divergencias de resultados. A continuación, se exploran los factores que contribuyen a estas inconsistencias. Y, finalmente, se presenta una propuesta de investigación que busca evaluar estadísticamente la contribución de los mecanismos de justicia transicional a la consolidación de la democracia y la protección de los derechos humanos en América Latina y el Caribe.
 
-Este análisis proporciona una perspectiva teórica y metodológica que permite comprender los desafíos que enfrenta actualmente el estudio sociológico de la contribución de los enjuiciamientos, amnistías y comisiones de la verdad celebradas en los países de la región.
 
-## II. 1. Estudios anteriores sobre la contribución de los mecanismos de justicia transicional a la democracia y la protección de los derechos humanos
+## 1. Estudios anteriores sobre justicia transicional, democracia y protección de los derechos humanos
 
 Durante los últimos 20 años se han desarrollado cinco importantes estudios cuantitativos que analizan estadísticamente la contribución de los enjuiciamientos, amnistías y comisiones de la verdad a la democracia y la protección de los derechos humanos en los regímenes democráticos post autoritarios y post conflicto [@Dancy2010a; @Stewart2017; @Thoms2010]. Estos estudios generaron teorías de alcance medio e hipótesis de investigación que han sido replicadas en los análisis posteriores desarrollador por los académicos que reúnen y sistematizan información sobre el uso de mecanismos de justicia transicional a nivel de países.
 
@@ -65,7 +64,7 @@ A diferencia de lo planteado por @Olsen2010a, los resultados del estudio de @Dan
 
 En segundo lugar, los resultados del estudio @Dancy2022 señalan que el uso de una o más comisiones de la verdad mejora los niveles de participación democrática en los países, pero no tiene efectos sobre institucionales que garanticen el ejercicio de las libertades y civiles políticas. Es decir, no generan reformas que mejoran las instituciones que restringen el poder del ejecutivo o que garantizan el ejercicio colectivo de los derechos fundamentales. Lo que sí hace es aumentar los niveles de participación electoral y de las organizaciones de la sociedad civil en la toma de decisiones, incentivando a las personas que antes eran excluidas a integrarse a la vida pública.
 
-## II. 2. Inconsistencias en los resultados de la Justicia Transicional
+## 2. Inconsistencias en los resultados de los estudios anteriores
 
 Al comparar los hallazgos producidos por los cinco estudios reseñados anteriormente, se pueden observar importantes diferencias en cuanto a la contribución que hacen -de forma individual o combinada- los mecanismos de justicia transicional a la democracia y la protección de los derechos humanos en los regímenes de transición.
 
@@ -79,7 +78,7 @@ A nivel combinado, los estudios muestran diferencias importantes relacionadas co
 
 Varios factores ayudan a explicar la inconsistencia entre los hallazgos generados por los estudios anteriores. En la presente tesis de magister se destacan tres cuestiones principales que son el resultado del uso de métodos cuantitativos: la definición y medición de conceptos y variables de la justicia transicional; la elección de variables dependendientes como medidas de resultado; y las estrategias de muestreo entre países y tipos de transición.
 
-### II. 2. 1. Diferencias en la definición y medición de la justicia transicional
+### 2. 1. Diferencias en la definición y medición de la justicia transicional
 
 En primer lugar, existe una carencia de definiciones taxativas y medidas uniformes. Cada mecanismo de justicia transicional parece ser conceptualizado y medido de manera distinta entre los académicos del campo.
 
@@ -89,7 +88,7 @@ Los estudios también varían significativamente en cómo definen operativamente
 
 Además, los estudios que examinan las amnistías tampoco logran hacer distinciones cualitativas sólidas. @Snyder2003 y @Olsen2010a tratan las amnistías como variables ficticias. Dentro de esta categoría incluyen amnistías derivadas de acuerdos de paz o de transiciones negociadas, o que son dictadas por gobiernos post autoritarios o post conflicto en favor de criminales de guerra, criminales de lesa humanidad, miembros de grupos insurgentes, entre otros. En cambio, @Dancy2019 definen las amnistías como disposiciones legales que favorecen sólo a criminales de lesa humanidad procesados o condenados por los tribunales de justicia, y -en base a esa definición- cuentan el número de leyes o decretos de amnistías que son dictados en cada país en los años posteriores al retorno de la democracia.
 
-### II. 2. 1. Diferencias en la elección de variables dependientes
+### 2. 1. Diferencias en la elección de variables dependientes
 
 En segundo lugar, los estudios comparados utilizan diferentes medidas de resultado para analizar la contribución de los mecanismos de justicia transicional a la democracia y la protección de los derechos humanos. Este problema es particularmente agudo en los estudios que analizan la contribución de los juicios, amnistías y comisiones de la verdad a la democratización de los países. La mayoría de los autores utilizan las escalas de democracia liberal de los proyectos CIRI, Freedom House y Polity IV [@Dancy2019; @Olsen2010a; @Snyder2003], mientras que otros utilizan indicadores desagregados de reformas institucionales y prácticas democráticas [@Dancy2022]. En ambos casos, los indicadores empleados dan cuenta de los niveles de participación, competencia y apertura electoral, de libertad de prensa, de libertad sindical, de control judicial sobre el poder ejecutivo y de otras dimensiones de la vida pública que poco tienen que ver con los objetivos manifiestos de verdad, justicia, reparación y garantías de no repetición que guían la implementación de los mecanismos de justicia transicional. Por tanto, resulta teóricamente problemático formular argumentos causales sobre el impacto de los mecanismos de justicia transicional en los aspectos de la democracia que son medidos por los proyectos CIRI, Freedom House y Polity IV. Sin embargo, otros aspectos que podrían ser más relevantes, como la ocurrencia de intentos de golpes de estado o de ataques armados en contra de la población civil, no han sido totalmente explorados hasta ahora.
 
@@ -97,7 +96,7 @@ Comparativamente hablando, existe un mayor consenso sobre las medidas utilizadas
 
 El desafío metodológico aquí es seleccionar y aplicar medidas de resultado adecuadas y coherentes para evaluar la contribución de la justicia transicional a la democracia y la protección de los derechos humanos. La selección de los indicadores y medidas de resultado debe basarse tanto en los argumentos teóricos de causalidad formulados por los enfoques de la justicia transicional como en la calidad metodológica de los indicadores disponibles.
 
-### II. 2. 3. Diferencias en las estrategias de muestreo
+### 2. 3. Diferencias en las estrategias de muestreo
 
 En tercer lugar, los estudios comparados discrepan sobre el universo relevante de casos a analizar. Algunos consideran sólo los casos de países que experimentaron transiciones democráticas [@Dancy2019; @Kim2010] o post conflicto [@Snyder2003], y otros consideran ambos tipos de transiciones [@Dancy2022]. Estas diferencias en los criterios de selección de casos genera observaciones ampliamente divergentes para el análisis. Por tanto, no es posible generalizar los resultados entre los países que cerraron exitosamente un conflicto armado interno, y los países que experimentaron transiciones democráticas.
 
@@ -117,11 +116,12 @@ La capacidad de los países para llevar a cabo procesos de justicia transicional
 
 En resumen, aunque existen principios generales de justicia transicional que son aplicables a los casos de países con pasados violentos o autoritarios, cada contexto regional es único y debe ser abordado teniendo en cuenta las características específicas de la sociedades en cuestión. La comparación directa entre países con diferentes legados violentos o autoritarios, o diferentes tipos de transición, puede simplificar en exceso los desafíos complejos y las consideraciones que están involucradas en cada caso.
 
-## II. 3. Propuesta de Investigación
+
+## 3. Propuesta de Investigación
 
 Los factores de inconsistencia señalados anteriormente representan importantes desafíos para la investigación empírica sobre la contribución de los mecanismos de justicia transicional a la democracia y la protección de los derechos humanos. En la presente tesis de magister se abordan estos desafíos a través de una estrategia de investigación novedosa que utiliza definiciones coherentes, datos y observaciones comparables, e indicadores adecuados que capturan las diferencias cuantitativas y cualitativas de los enjuciamientos, amnistías y comisiones de la verdad.
 
-### II. 3. 1. Definiciones del derecho internacional e indicadores del TJRC
+### 3. 1. Definiciones del derecho internacional e indicadores del TJRC
 
 Para superar el desafío vinculado a la definición y medición de las variables de interés, se utilizan los conceptos del derecho internacional de los derechos humanos, y los indicadores desarrollados por el *Transitional Justice Research Collaborative* (TJRC).
 
@@ -133,7 +133,7 @@ Además, el TJRC dispone de una base de datos con variables que miden la frecuen
 
 A diferencia de los estudios que utilizan variables dicotómicas para medir el uso de juicios, amnistías y comisiones de la verdad, y contar los años de transición en los que se implementó cada uno de ellos [@Olsen2010a; @Kim2010], el uso de los datos del TJRC permite utilizar indicadores conceptualmente precisos que registran la frecuencia y la calidad de los mecanismos de justicia transicional. Lo cual supone una mejora significativa en la medición de las variables de interés.
 
-### II. 3. 2. Medidas de protección de la democracia y los derechos humanos
+### 3. 2. Medidas de protección de la democracia y los derechos humanos
 
 Para abordar el desafío de la observación de resultados (elección de variables dependientes), se diseñaron modelos de análisis que buscan explicar la ocurrencia de golpes de Estado y la variación en los niveles de protección de los derechos humanos de integridad física, en base al uso individual y combinado de los mecanismos de justicia transicional.
 
@@ -145,7 +145,7 @@ En cuanto a la protección de los derechos humanos, la presenta tesis utiliza Í
 
 Cómo se explicará más adelante, el Índice de Integridad Física Latente de Schnakenberg y Fariss es el indicador más robusto de protección de los derechos humanos desarrollado hasta ahora [@Fariss2017]. Por ello, el uso de este indicador supone una mejora sustantiva en la medición del impacto de la justicia transicional en los países con democracias post autoritarias.
 
-### II. 3. 3. Muestra de países de América Latina con pasados autoritarios recientes
+### 3. 3. Muestra de países de América Latina con pasados autoritarios recientes
 
 Para superar los desafíos teóricos y metodológicos relacionados con las estrategias de muestreo y la comparabilidad de los casos de estudio, se diseñó una investigación empírica que analiza la contribución de los mecanismos de justicia transicional a la democracia y la protección de los derechos humanos sólo en los países de América Latina y el Caribe que experimentaron transiciones democráticas entre los años 1970 y 2010. La elección de este universo de estudio se basó en dos criterios teóricos y metodológicos.
 

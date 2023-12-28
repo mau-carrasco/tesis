@@ -1,0 +1,1043 @@
+---
+lang: es
+output:
+  word_document:
+    reference_docx: formato_1.docx
+    toc: yes
+    fig_caption: yes
+toc-title: Tabla de contenido
+csl: apa.csl
+bibliography: bibliografia.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F, message = F, warning = F, fig.height = 3, fig.width = 6, results='asis')
+
+library(tidyverse)
+library(tidymodels)
+library(haven)
+library(pglm)
+library(survival)
+library(flextable)
+library(sandwich)
+library(modelsummary)
+library(sf)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(countrycode)
+
+set_flextable_defaults(
+  font.size = 10,
+  font.family = "Garamond",
+  theme_fun = "theme_zebra")
+
+datos_tesis <- read_rds("~/GitHub/tesis/datos/datos_tesis.rds")
+juicios <- read_dta("~/GitHub/tesis/datos/barsbargains_replication/barsbargains.dta")
+datos_tesis <- datos_tesis %>% left_join(juicios %>% select(pais = country, anno = year, codigo_transicion = dtr_id, amnistias_dummy = ambin))
+```
+
+# INTRODUCCIÓN
+
+Durante los últimos cuatro años, diferentes países de América Latina y el Caribe experimentaron situaciones de inestabilidad política que provocaron un importante retroceso en materia de derechos humanos. En Chile, en el contexto de las protestas masivas de 2019, organismos internacionales denunciaron el uso ilegal de armas mortales y la aplicación de torturas y vejaciones sexuales hacia los manifestantes por parte de las fuerzas de orden y seguridad  [@AI2020; @HRW2020].[^1] Ese mismo año, Bolivia enfrentó tensiones políticas que desencadenaron la violencia estatal, generando miles de denuncias de abusos a los derechos humanos en el contexto postelectoral [@HRW2020].[^2] En Venezuela, Honduras, Guatemala y Nicaragua, se registraron situaciones análogas, con informes de violencia sexual, asesinatos y desapariciones forzadas, a menudo imbricadas en conflictos sociales y políticos [@AI2020].[^3] En 2020, Colombia y México registraron un aumento en los asesinatos de líderes sociales y defensores de derechos humanos [@AI2021], mientras que en Brasil, el gobierno de Bolsonaro fue acusado de implementar políticas represivas hacia grupos medioambientalistas y sectores vulnerables de la población [@HRW2021].[^4]
+
+En varios casos, el retroceso se está dando en países que cuentan con un historial reciente de violaciones graves a los derechos humanos y que han implementado durante los últimos 30 o 40 años un conjunto de medidas de justicia transicional para tratar con sus pasados violentos y autoritarios, y prevenir la ocurrencia de nuevas atrocidades. En este contexto, políticos, académicos y activistas se preguntan si la justicia transicional ayudó realmente a la prevención de nuevas violaciones a los derechos humanos, o si el retroceso que actualmente viven los países de América Latina y el Caribe con regímenes post autoritarios se está dando a pesar de las disposiciones de la justicia transicional. Sin embargo, el desarrollo actual del campo de investigación no permite responder adecuadamente esta interrogante.
+
+Los estudios realizados hasta ahora ofrecen resultados y conclusiones inconsistentes sobre la eficacia histórica de los mecanismos de justicia transicional (enjuiciamientos, amnistías y comisiones de la verdad) en la consolidación de la democracia y la protección de los derechos humanos. Los estudios de @Kim2010 y @Dancy2019, informan de una relación positiva entre el enjuiciamiento de criminales de lesa humanidad y el nivel de protección de los derechos de integridad física en las democracias post autoritarias, mientras que los estudios de @Snyder2003 y @Vinjamuri2015 sugieren un efecto contrario, vinculando los enjuiciamientos con un aumento de la represión estatal. Respecto a las amnistías, es decir, a las políticas estatales de perdón e impunidad por violaciones a los derechos humanos, la evidencia presentada por @Snyder2003 indica que éstas tienen un impacto positivo en la promoción de la democracia y la prevención de abusos estatales, mientras que el estudio de @Dancy2019 las relaciona con mejoras en el ejercicio de libertades civiles, pero no con la disminución de la violencia institucional. En el caso de las comisiones de la verdad, vale decir, las medidas extra judiciales de justicia transicional, los resultados también son mixtos: los estudios de @Olsen2010a y @Olsen2010 plantean que las comisiones tienen un impacto negativo en la protección de los derechos humanos, mientras @Dancy2022 presentan evidencia contraria que describe una relación positiva entre el uso de este mecanismo de justicia transicional y los niveles de respeto a los derechos humanos. Los estudios también divergen en cuanto al impacto combinado de enjuiciamientos, amnistías y comisiones de la verdad. Mientras @Olsen2010a sugieren que esta combinación fortalece la democracia y la protección de los derechos humanos al equilibrar la rendición de cuentas con los imperativos de estabilidad política, el estudio de @Dancy2019 no encuentra beneficios significativos en los países que utilizaron estos mecanismos conjuntamente.
+
+La inconsistencia en los hallazgos y resultados producidos por los estudios anteriores puede estar relacionado con tres factores clave del diseño de investigación. En primer lugar, se identifica una notable ausencia de consenso en torno a las definiciones y métricas aplicadas a los mecanismos de justicia transicional. Mientras algunos investigadores adoptan un enfoque inclusivo que abarca una variedad de actores en procesos judiciales vinculados a delitos comunes y violaciones de derechos humanos, otros restringen su análisis exclusivamente a la persecución de crímenes cometidos por agentes estatales. Esta variabilidad conceptual se extiende a la caracterización y alcance de las comisiones de la verdad, donde las divergencias en criterios de inclusión de casos específicos añaden complejidad al panorama investigativo. En segundo lugar, las investigaciones anteriores han utilizado diferentes variables dependientes para evaluar el impacto de la justicia transicional en la consolidación de la democracia y la protección de los derechos humanos. Esta divergencia de variables e indicadores de resultado se evidencia particularmente en la utilización de distintas escalas y dimensiones de democracia, algunas de las cuales pueden no alinearse directamente con los objetivos intrínsecos de los mecanismos de justicia transicional, generando problemas para el establecimiento de relaciones causales. En tercer lugar, existe disparidad en los estudios comparados respecto al conjunto específico de casos a analizar. Mientras algunos se centran en países con transiciones democráticas o post-conflicto, otros abarcan ambos escenarios. Esta variación en la selección de casos conduce a interpretaciones heterogéneas que dificultan el alcance y la generalización de resultados.
+
+Los factores de inconsistencia señalados anteriormente, representan importantes desafíos para la investigación empírica sobre la contribución de los mecanismos de justicia transicional a la democracia y la protección de los derechos humanos. En la presente tesis se abordan estos desafíos a través de una estrategia de investigación rigurosa, que se apoya en definiciones precisas, datos homogéneos y métricas robustas para evaluar el impacto de los enjuiciamientos, amnistías y comisiones de la verdad en las democracias post autoritarias.
+
+Para garantizar coherencia en la definición y medición de variables clave, la tesis se fundamenta en el derecho internacional de los derechos humanos y en los indicadores desarrollados por el *Transitional Justice Research Collaborative* (TJRC). Dicha base conceptual permite una interpretación clara de los mecanismos de justicia transicional como herramientas sociales destinadas a abordar las secuelas de regímenes autoritarios caracterizados por violaciones sistemáticas de derechos humanos. El TJRC, a través de su base de datos detallada, facilita la cuantificación precisa de enjuiciamientos (con y sin sentencias condenatorias), amnistías y comisiones de la verdad, ofreciendo así una perspectiva integral y matizada de cada mecanismo. 
+
+Además, la tesis presenta modelos analíticos que se centran en evaluar la incidencia de los mecanismos de justicia transicional en la estabilidad democrática y la protección de derechos humanos. Específicamente, se investiga la relación entre la implementación de enjuiciamientos, amnistías y comisiones de la verdad, y la ocurrencia de golpes de Estado, así como la variabilidad en la protección latente de los derechos de integridad física. Estos modelos buscan ofrecer una comprensión más profunda y contextualizada de cómo la justicia transicional puede influir en la consolidación democrática y garantizar el ejercicio de derechos fundamentales. 
+
+En aras de la comparabilidad y relevancia de los casos de estudio, la tesis se concentra en los países de América Latina y el Caribe que experimentaron transiciones democráticas entre 1970 y 2010. Esta selección de casos se justifica en la similitud de contextos autoritarios previos en la región, marcados por el ejercicio del terrorismo de estado y el combate al comunismo internacional. Al restringir el análisis a este conjunto de países y períodos, se pretende reducir el sesgo de variable omitida y facilitar el establecimiento de relaciones causales claras entre los mecanismos de justicia transicional, la democracia y la derechos humanos, asumiendo que estos resultados no son generalizables a otras regiones y contextos de transición.
+
+En base al diseño de investigación presentado, el objetivo general de la tesis fue evaluar la contribución de los mecanismos de justicia transicional a la prevención de golpes de estado y la protección de los derechos humanos en los países de América Latina y el Caribe que experimentaron transiciones democráticas entre los años 1970 y 2010. Como se verá más adelante, la limitación temporal del estudio está dada por la disponibilidad de datos estadísticos sobre enjuiciamientos, sentencias, amnistías y comisiones de la verdad, los cuales se reducen al periodo trabajado por el TJRC. Esta limitación implica que el análisis desarrollado no puede abordar eventos más recientes o futuros de justicia transicional y, por tanto, su vínculo con la prevención de golpes de estado y la protección de los derechos humanos. Sin embargo, los datos disponibles en TJRC aún son útiles para analizar sociológicamente la contribución histórica de las medidas de verdad, justicia, reparación y garantías de no repetición.
+
+Para cumplir con el objetivo señalado, se formularon siete hipótesis de investigación basadas en las teorías de alcance medio sobre el impacto de los enjuiciamientos, amnistías y comisiones. Dichas hipótesis se pusieron a aprueba a través de modelos de regresión para datos de series temporales transversales. En específico se estimaron coeficientes de regresión logística de la probabilidad de ocurrencia de golpes de estado y coeficientes de regresión lineal del puntaje de protección latente de los derechos de integridad física, en función del número de enjuiciamientos, amnistías y comisiones de la verdad acumuladas en los años posteriores a la transición democrática. La estimación de los coeficientes se hizo sobre una muestra de 17 países (N) con diferentes años de transición acumulados durante el periodo de estudio (T = 14-37). En todos los modelos, se incluyeron variables de efecto fijo por país e indicadores de control estadísticos vinculados al crecimiento económico, al nivel de democracia, al tamaño de la población, al nivel de independencia del poder judicial, al historial represivo de las naciones y a la existencia de conflictos armados durante los periodos post autoritarios. Los resultados de los modelos se presentan en el texto a través tablas y figuras que visualizan el impacto de cada mecanismo de justicia transicional en las variables de resultado.
+
+En términos generales, el proceso de investigación desarrollado en esta tesis se describe en cuatro capítulos. El primero, muestra el trabajo de construcción del objeto de estudio, donde se detalla la comparación de resultados obtenidos en las investigaciones anteriores, se detectan los factores de inconsistencia y se proponen caminos para superar los desafíos conceptuales y metodológicos. El segundo capítulo formaliza los objetivos específicos de la tesis en función del diseño general de investigación. El tercero, presenta la discusión teórica actual y formula las hipótesis de evaluación de los mecanismos de justicia transicional. El cuarto capítulo, informa los resultados de los modelos regresión que someten a pruebas las hipótesis. Y el quinto y último capítulo, discute teóricamente los hallazgos obtenidos y establece las conclusiones del estudio.
+
+[^1]: El Instituto de Derechos Humanos (INDH) presentó un total de 2.520 querellas por violaciones a los derechos humanos en todo Chile, que consideran a 3.203 víctimas de vulneraciones al derecho a la vida y a la integridad física, por hechos ocurridos entre el 18 de octubre de 2019 y el 18 de marzo de 2020, en el contexto de las movilizaciones contra el gobierno de Sebastián Piñera. Más información en: https://t.ly/npRy-.
+
+[^2]:Según la  Comisión Interamericana de Derechos Humanos (CIDH), al 17 de noviembre de 2019, 23 personas habían perdido la vida y más de 700 resultaron heridas en el contexto de las protestas iniciadas tras las elecciones del 20 de octubre. Más información en: https://www.hrw.org/es/world-report/2020/country-chapters/bolivia
+
+[^3]: En Venezuela, según Amnistía Internacional, las fuerzas de seguridad efectuaron entre enero y septiembre 488 presuntas ejecuciones extrajudiciales. Más información en: https://amnistia.cl/americas-el-doble-rasero-y-las-respuestas-insuficientes-han-menoscabado-los-derechos-humanos/
+
+[^4]: Según Human Rights Watch, la policía brasileña mató a 6.400 personas en 2020, la mayor cifra registrada a la fecha. Cerca del 80 % de las víctimas fueron personas negras. Más información en: https://www.hrw.org/es/news/2022/01/13/america-latina-retroceso-alarmante-de-libertades-basicas
+
+# ESTADO DEL ARTE Y PROBLEMA DE ESTUDIO
+
+En el siguiente capítulo, se analiza la literatura existente sobre jusiticia transicional, democracia y protección de los derechos humanos en las democracias post autoritarias, con un enfoque particular en el impacto de los enjuiciamientos, amnistías y comisiones de la verdad. Para lograr esto, se revisan los estudios clave del campo y se destacan las razones detrás de las divergencias de resultados. A continuación, se exploran los factores que contribuyen a estas inconsistencias. Y, finalmente, se presenta una propuesta de investigación que busca evaluar estadísticamente la contribución de los mecanismos de justicia transicional a la consolidación de la democracia y la protección de los derechos humanos en América Latina y el Caribe.
+
+
+## 1. Estudios anteriores sobre justicia transicional, democracia y protección de los derechos humanos
+
+Durante los últimos 20 años se han desarrollado cinco importantes estudios cuantitativos que analizan estadísticamente la contribución de los enjuiciamientos, amnistías y comisiones de la verdad a la democracia y la protección de los derechos humanos en los regímenes democráticos post autoritarios y post conflicto [@Dancy2010a; @Stewart2017; @Thoms2010]. Estos estudios generaron teorías de alcance medio e hipótesis de investigación que han sido replicadas en los análisis posteriores desarrollador por los académicos que reúnen y sistematizan información sobre el uso de mecanismos de justicia transicional a nivel de países.
+
+El primer estudio fue realizado por @Snyder2003 y centró en analizar empíricamente el impacto de la justicia transicional sobre la protección de la democracia y los derechos humanos en 32 países que experimentaron guerras civiles en el periodo 1989-2003. Para ello, los autores contruyeron una base de datos con indicadores que dan cuenta del uso de enjuiciamientos, amnistías y comisiones de la verdad en el periodo posterior al término del conflicto.
+
+Para medir el impacto de la justicia transicional en el respeto de la democracia y los derechos humanos, @Snyder2003 utilizaron como variable dependiente dos indicadores del nivel de democracia y de garantía de libertades civiles, provenientes de la base de datos de Freedom House y Polity IV. A través de estos indicadores, los autores operacionalizan los conceptos centrales del estudio, y evaluan cómo las tendencias en el nivel de respeto a la democracia y los derechos humanos se correlacionan con las estrategias de justicia transicional utilizadas en los caso de estudio [@Snyder2003, p. 18].
+
+Los resultados obtenidos por @Snyder2003 muestran que las estrategias basadas en el enjuiciamiento de criminales de lesa humanidad impactan negativamente en la protección de la democracia y los derechos humanos, ya que aumentan el riesgo de enfrentar nuevas atrocidades o golpes de estado en el corto plazo, sobre todo cuando los potenciales saboteadores del proceso guardan importantes cuotas de poder institucional. En cambio, las estrategias más pragmáticas o realistas, basados en la negociación política, las amnistías selectivas y el fortalecimiento institucional a largo plazo tienen más posibilidades de reducir la tensión política, consolidar la democracia y garantizar el respeto de los derechos humanos.
+
+En la misma línea los resultados del estudio de @Snyder2003 sugieren que el uso de comisiones de la verdad genera un impacto positivo en la protección de los derechos humanos sólo cuando va acompañado de amnistías para los responsables de las atrocidades. Si esta condición no se cumple, o se combina el uso de comisiones con enjuiciamientos, los países enfrentarán más golpes de estado o ataques armados contra la población civil, y reducirán su nivel de protección de los derechos humanos.
+
+A través de un enfoque pragmático, @Snyder2003 interpretan los resultados de su estudio en favor en las estrategias realistas de justicia transicional. Argumentan que la estabilidad del orden político de un país que atravesó recientemente por una guerra civil, se basa en la negociación política entre grupos contendientes y en la creación de instituciones administrativas sólidas que puedan hacer cumplir la ley bajo los estándares del estado de derecho. La prevención de atrocidades y el aumento del respeto por la ley dependen con frecuencia de llegar a acuerdos políticamente convenientes para ambas partes. La amnistía, o simplemente ignorar los abusos del pasado, puede ser una herramienta necesaria en esta negociación. En cambio, implementar medidas de rendición de cuentas por los abusos del pasado, sin considerar la realidad política local, puede alterar el equilibrio de intereses políticos dominantes y aumentar el riesgo de sufrir golpes de estado, deteriorando significativamente la protección de los derechos humanos.
+
+El segundo estudio importante fue realizado por @Kim2010. El objetivo de este estudio fue analizar la relación entre los juicios por violaciones de derechos humanos (nacionales y extranjeros) y el nivel de protección a los derechos de integridad física, considerando también el uso de comisiones de la verdad como variable de control.
+
+La muestra utilizada por @Kim2010 considera un total de 93 países en transición, que pasaron desde autocracias o guerras civiles hacia regímenes democráticos o semidemocráticos, o que fueron creados después de la disolución de un estado autocrático, entre los años 1980 y 2004. El nivel de respeto a los derechos humanos es analizado mediante el índice de derechos de integridad física de Cingranelli-Richards (CIRI), mientras que los juicios por violaciones de derechos humanos son operacionalizados en dos variables diferentes: una variable dicotómica que indica si un país tuvo un enjuiciamiento nacional o extranjero en algún momento después de la transición, y una variable numérica que cuenta los años de enjuiciamientos acumulados por país. Las comisiones de la verdad, por su parte, son medidas a través de una variable dicotómica que refleja experiencia anterior y posterior al uso de este mecanismo a través de los años de transición, considerando el hecho de que existen países que descartan una política institucional para establecer una verdad histórica sobre los abusos del pasado. Para el resto de las variables de control, el estudio incorpora indicadores ampliamente aceptados de democracia, guerras internacionales, guerras civiles, ratificación de tratados, posición económica del país dentro de la región, crecimiento económico, tamaño de la población y crecimiento de la población.
+
+Los resultados del estudio @Kim2010 proporcionan un panorama positivo sobre la relación entre enjuiciamientos penales y protección de los derechos humanos en los países en transición. En concreto, los resultados muestran que los países con enjuiciamientos tienen mejores niveles de protección de los derechos humanos que los países sin enjuiciamientos, y que los países que han experimentado más enjuiciamientos a lo largo del tiempo tienen una mayor protección de los derechos humanos que los países que tuvieron menos años de enjuiciamientos. Además, los resultados muestran que la experiencia de una comisión de verdad también tiene una relación positiva con la protección de los derechos humanos. Esto quiere decir, que los países que implementaron comisiones de la verdad tuvieron menores niveles de represión durante el periodo de transición que los países que no hicieron uso de este mecanismo.
+
+@Kim2010 explican sus hallazgos apoyándose en la teoría constructivista de la disuasión. Esta teoría plantea que los enjuiciamientos y las comisiones de la verdad contribuyen a la protección de los derechos humanos en las democracias post autoritarias porque aumentan los costos penales y simbólicos asociados al uso de la represión estatal [@Sikkink2011; @Sikkink2013]. Ambos mecanismos comunican a los agentes del Estado que, en caso de cometer violaciones de derechos humanos, serán perseguidos por los tribunales y serán desacreditados públicamente por los organismos encargados de investigar dichos abusos.
+
+El tercer estudio macro cuantitativo sobre la contribución de los mecanismos de justicia transicional a la democracia y la protección de los derechos humanos fue publicado por @Olsen2010a. El objetivo principal de este estudio es analizar la relación entre el uso -individual y combinado- de juicios, amnistías y comisiones de la verdad, y los niveles de democracia y protección de los derechos de integridad física reportados en los países en transición. 
+
+@Olsen2010a utilizan una muestra que incluye 91 transiciones políticas del autoritarismo a la democracia, ocurridas en 74 países del mundo entre los años 1970 y 2004. La medición del respeto o protección de los derechos humanos se realiza a través de dos indicadores diferentes: el índice de derechos de integridad física de Cingranelli-Richards (CIRI) y la escala de terror político (PTS) del departamento de Ciencia Política de la Universidad de Carolina de Norte (USA). El nivel de democracia también es medido a través de dos indicadores diferentes: el índice Polity 2 del conjunto de datos Polity IV, y el Índice de Democracia Liberal del proyecto Freedom House. Por su parte, el uso de amnistías, comisiones de la verdad y enjuiciamientos, se mide a través de variables dicotómicas que dan cuenta de la vigencia de cada uno de estos mecanismos durante los años de transición y también de manera acumulada a lo largo del tiempo. Como variables de control se incluye el PIB, la región, y el nivel de democracia de los países.
+
+Los hallazgos obtenidos por Olsen, Payne y Reiter difieren significativamente de los resultados del estudio de @Kim2010. El estudio de Olsen y sus colegas muestra que, en general, la adopción de los mecanismos de justicia transicional se relaciona positivamente con los niveles de democracia y protección de los derechos humanos, pero ninguno de estos mecanismos por sí sólo logra prevenir el uso de la violencia estatal y el deterioro de las instituciones democráticas [@Olsen2010a, p. 996]. Ni los juicios, ni las amnistías tienen una asociación positiva con los niveles de democracia y respeto a los derechos humanos, y las comisiones de la verdad parecen estar asociadas con un aumento de la represión estatal. Sin embargo, dos combinaciones de mecanismos de justicia transicional si muestran una relación positiva y estadísticamente fuerte con el nivel de respeto a los derechos humanos en los países en transición: (1) la combinación de juicios y amnistías, y (2) la combinación de juicios, amnistías y comisiones de la verdad. Lo mismo ocurre con la asociación entre justicia transicional y democracia, ya que solo el uso combinado de (1) juicios y amnistía, y (2) comisiones de la verdad y aministía, genera un aumento en el nivel de democratización.
+
+@Olsen2010a explican los hallazgos de su investigación apoyándose en la teoría del equilibrio de la justicia transicional. Esta teoría, plantea que la combinación de juicios y amnistías genera un equilibrio que contribuye a los objetivos de la democracia y los derechos humanos, ya que permite satisfacer una parte importante de la demanda por justicia levantada por las víctimas y sus familiares, sin activar a los potenciales saboteadores del proceso de transición que podrían perpetrar un nuevo golpe de estado. Bajo este supuesto, Olsen y sus colegas plantear que la estabilidad a corto plazo que brindan las amnistías no impide el beneficio a largo plazo de la rendición de cuentas a través del enjuiciamiento de criminales de lesa humanidad. Es decir, la secuencia de la amnistía y los juicios a lo largo del tiempo sería la fórmula más razonables de garantizar el respeto de los derechos humanos en los regímenes post autoritarios, sin poner en riesgo la democracia [@Olsen2010a]. En la misma línea, los autores plantean que, por si solas, las comisiones de la verdad impactan negativamente en la protección de los derechos humanos porque no logran promover la rendición de cuentas ni generar estabilidad política en el proceso de transición. Pero si las comisiones de la verdad se combinan con enjuiciamientos y amnistías mejoraran los niveles de democracia y protección de los derechos humanos en el corto y largo plazo, ya que contribuyen a reforzar el equilibrio de la justicia transicional [@Olsen2010].
+
+El cuarto estudio sobre justicia transicional y protección de los derechos humanos fue realizado recientemente por @Dancy2019. Este estudio analiza la contribución de los juicios y amnistías a la protección de los derechos de integridad física y las libertades civiles y políticas en los países con democracias post autoritarias. 
+
+La muestra utilizada por @Dancy2019 selecciona dos tipos de casos:  los casos de estados democráticos recién formados y los casos de estados que pasan de la autocracia a regímenes semi o totalmente democráticos. En total, la base de datos contiene 111 transiciones democráticas ocurridas en 89 países, entre los años 1970 y 2010. El nivel de respeto a los derechos de humanos es medido a través del índice de derechos de integridad física Cingranelli-Richards (CIRI), y el nivel de protección de las libertades civiles y políticas es medido través de índice de derechos de empoderamiento de la misma base de datos. Los enjuiciamientos penales y las amnistías son medidas a través de variables numéricas que indican la cantidad de mecanismos de justicia transicional vigentes para cada año de transición y de manera acumulada. Además, se incorporan una variable que cuenta los veredictos de culpabilidad en el año en que la sentencia fue emitida por primera vez por un tribunal. Estas sentencias son acumuladas en el tiempo de transición de la misma manera que los juicios y las amnistías vigentes. En cuanto a las variables de control, el estudio de @Dancy2019 incorpora indicadores de quiebre democrático, independencia del poder judicial, guerra civil, años de transición, PIB per cápita, tamaño de la población, y nivel de protección de los derechos humanos antes de la transición.
+
+A diferencia de los resultados obtenidos por @Olsen2010a, la evidencia presentada por @Dancy2019 muestra que los enjuiciamientos y los veredictos de culpabilidad están asociados con un aumento significativo en los niveles de protección de los derechos de integridad física, mientras que las amnistías se asocian con una menor violación de las libertades civiles y políticas. Sin embargo, la combinación de ambos mecanismos no genera efectos positivos en los derechos analizados. Es decir, la combinación de juicios y amnistías no mejora los niveles de protección de derechos de integridad física, ni el respeto de las libertades civiles y políticas en las democracias post autoritarias. Esto demuestra que los enjuiciamientos y las amnistías, por si solas, contribuyen a distintos objetivos políticos del proceso de transición, aunque estos no sean necesariamente coherentes ni compatibles entre si [@Dancy2019]. Según @Dancy2019, los hallazgos de su investigación pueden usarse para informar un nuevo enfoque de la justicia transicional, uno basado no en la deliberación democrática o el legalismo formal, sino en lo que algunos teóricos denominan "agonismo" [@Mouffe2014]. Tal enfoque reconocería la naturaleza irreductiblemente impugnada de la acción política y legal realizada en nombre de la justicia transicional, al tiempo que vería en esa impugnación la fuente del pluralismo y el cambio productivo.
+
+El quinto y último estudio sobre justicia transicional y protección de los derechos humanos en las democracias post autoritarias fue realizado por @Dancy2022. Este estudio analiza la relación entre el uso de comisiones de la verdad y el fortalecimiento de las instituciones y prácticas democráticas de los países en transición, entre las que se incluye el respeto por los derechos de integridad física.
+
+@Dancy2022, utilizan una muestra que incluye tres tipos de casos: 1) países que transitaron desde dictaduras o guerras civiles hacia regímenes democráticos o semidemocráticos, 2) países cuya institucionalidad democrática fue creada o reconstruida luego de la disolución de un estado autocrático, y 3) países democráticos que experimentaron guerras civiles o conflictos armados internos. En total, la muestra incluye 92 países que experimentaron transiciones o guerras civiles entre los años 1970 y 2015. El nivel de respeto a los derechos humanos es medido a través del indicador de integridad física latente de Schnakenberg y Fariss, y el nivel democracia es medido a través de dos indicadores proveniente de la base de datos del proyecto v-dem que dan cuenta de los cambios de las instituciones y los comporamientos democráticos: el índice de reforma democrática liberal (calculado en base en base a transformaciones institucionales afectan la obtención elecciones limpias, de libertad sindical, de rendición de cuentas y transparencia pública, y de respeto a las libertades civiles y políticas de las minorías), y el índice de comportamiento democrático (que combina índicadores que miden la participación de la sociedad civil, el voto popular directo y el poder de los gobiernos subnacionales electo). El uso de comisiones de la verdad es medido a través de un conjunto de indicadores que dan cuenta de sus operaciones en los procesos de transición, y de su nivel de éxito o fracaso. El primer indicador da cuenta de la realización de una comisión de verdad, incluido aquellas que no culminaron su trabajo o que se disolvieron sin producir resultados observables. El segundo indicador da cuenta de la existencia o inexistencia de un informe final emitido por una comisión de verdad. El tercero da cuenta de la publicación oficial de dicho informe (de manera impresa o digital). Y el cuarto indicador señala si el informe publicado incluye o no recomendaciones para reformas institucionales o enjuiciamiento de violadores de derechos humanos (ambas medidas de forma separada). En cuanto a las variables de control, el estudio incorpora el PIB per cápita, el tamaño de la población y la presencia o ausencia de conflictos armados en los países.
+
+A diferencia de lo planteado por @Olsen2010a, los resultados del estudio de @Dancy2022 muestran -en primer lugar- la existencia de una fuerte asociación entre el uso de comisiones de la verdad y la mejora en la protección de los derechos humanos. Incluso, los resultados muestran que la situación de los derechos humanos mejora aún más si las comisiones de la verdad hacen públicos sus informes y si recomiendan el enjuiciamiento de criminales de lesa humanidad. Este hallazgo respalda los resultados de otros estudios de justicia transicional que, desde un enfoque constructivista [@Kim2010], sostienen que el uso combinado de juicios y comisiones de la verdad genera un efecto disuasorio que contribuye significativamente a la no repetición, al aumentar los costos penales y simbólicos de la represión estatal [@Dancy2022].
+
+En segundo lugar, los resultados del estudio @Dancy2022 señalan que el uso de una o más comisiones de la verdad mejora los niveles de participación democrática en los países, pero no tiene efectos sobre institucionales que garanticen el ejercicio de las libertades y civiles políticas. Es decir, no generan reformas que mejoran las instituciones que restringen el poder del ejecutivo o que garantizan el ejercicio colectivo de los derechos fundamentales. Lo que sí hace es aumentar los niveles de participación electoral y de las organizaciones de la sociedad civil en la toma de decisiones, incentivando a las personas que antes eran excluidas a integrarse a la vida pública.
+
+## 2. Inconsistencias en los resultados de los estudios anteriores
+
+Al comparar los hallazgos producidos por los cinco estudios reseñados anteriormente, se pueden observar importantes diferencias en cuanto a la contribución que hacen -de forma individual o combinada- los mecanismos de justicia transicional a la democracia y la protección de los derechos humanos en los regímenes de transición.
+
+A nivel individual, los tres mecanismos de justicia transicional analizados presentan resultados inconsistentes. Los estudios de @Kim2010 y @Dancy2019 muestran una relación positiva entre el uso de enjuiciamientos y los niveles de protección de los derechos humanos en las democracias post autoritarias; mientras que el estudio de @Snyder2003 plantea que el enjuiciamiento está relacionado con un aumento de la represión estatal y un deterioro de las instituciones democráticas formales en los países que experimentaron conflictos internos o guerras civiles recientes. A su vez, @Olsen2010a presentan evidencia estadística que señala que el enjuiciamiento de criminales de lesa humanidad -por sí sólos- no mejora la protección de los derechos humanos ni los niveles de democracia en los países en transición.
+
+La contribución individual de las amnistías a la protección de los derechos humanos también es diferente entre los estudios. Mientras @Snyder2003 presentan evidencia que sugiere que este mecanismo contribuye -por si sólo- a la protección de la democracia y los derechos humanos, @Dancy2019 afirman que las amnistías no mejoran los niveles de protección de los derechos humanos, pero sí impactan positivamente en el ejercicio de las libertades civiles y políticas durante los primeros años de transición.
+
+En cuanto a las comisiones de la verdad, @Olsen2010a presentan evidencia de una relación negativa entre el uso individual de este mecanismo de justicia transicional y los niveles de protección de los derechos de integridad física en las democracias post autoritarias, mientras que @Dancy2022 y @Kim2010 muestran resultados que van en la dirección contraria.
+
+A nivel combinado, los estudios muestran diferencias importantes relacionadas con la interacción entre el uso de enjuiciamientos, amnistías y comisiones de la verdad. Mientras @Olsen2010a presentan evidencia de que el uso combinado de juicios y amnistías, y de juicios, amnistías y comisiones de la verdad genera un efecto positivo en la democracia y la protección de los derechos humanos, porque contribuyen al equilibrio entre los impulsos de rendición de cuentas y la necesidad de estabilidad política presente en las democracias post autoritarias; @Dancy2019 muestran que el uso combinado de juicios y amnistías no genera efectos positivos en la protección de los derechos de integridad física y en el ejercicio de libertades civiles y política en los países en transición.
+
+Varios factores ayudan a explicar la inconsistencia entre los hallazgos generados por los estudios anteriores. En la presente tesis de magister se destacan tres cuestiones principales que son el resultado del uso de métodos cuantitativos: la definición y medición de conceptos y variables de la justicia transicional; la elección de variables dependendientes como medidas de resultado; y las estrategias de muestreo entre países y tipos de transición.
+
+### 2. 1. Diferencias en la definición y medición de la justicia transicional
+
+En primer lugar, existe una carencia de definiciones taxativas y medidas uniformes. Cada mecanismo de justicia transicional parece ser conceptualizado y medido de manera distinta entre los académicos del campo.
+
+Para @Olsen2010a, por ejemplo, en el contexto de una transición, el enjuiciamiento por violaciones de derechos humanos incluye una diversidad de sospechosos, como grupos rebeldes armados; agentes estatales que luchan en guerras civiles, realizan operaciones de contrainsurgencia o participan en la represión gubernamental; y grupos de oposición política interna. Además, estos autores codifican y registran los enjuiciamientos por violaciones de derechos humanos sólo cuando llegan a un veredicto. Con ello, plantean implícitamente la hipótesis de que el resultado, más que el proceso, es fundamental para cualquier impacto de los enjuiciamientos en la democracia y los derechos humanos. En cambio, @Kim2010 y @Dancy2019, siguiendo los lineamientos del derecho penal internacional, definen los enjuiciamientos como acciones penales dirigidas hacia agentes estatales acusados de violar derechos humanos. @Kim2010 consideran más importante el proceso que el resultado. Por eso, codifican acusaciones, arrestos, extradiciones, detenciones y juicios bajo la categoría general de enjuiciamientos. @Dancy2019 parten del mismo supuesto de @Kim2010, pero codifican tanto los enjuiciamientos como las condenas de criminales de lesa humanidad para medir el efecto disuasorio de los procesos y los resultados de la persecución penal.
+
+Los estudios también varían significativamente en cómo definen operativamente las comisiones de la verdad. @Olsen2010a, @Kim2010 y @Dancy2022 entienden que una comisión de la verdad es un organismo temporal recientemente establecido y oficialmente sancionado por un estado o una organización gubernamental internacional para investigar un patrón de abusos contra los derechos humanos durante periodo histórico. Sin embargo, los autores mencionados utilizan diferentes criterios de inclusión de casos de comisiones de la verdad. @Olsen2010a, por ejemplo, incluyen casos de comisiones de la verdad que no investigan patrones de abusos sino eventos represivos particulares, como la Comisión Investigadora del Secuestro y Asesinato de los Representantes Nacionales Zelmar Michelini y Héctor Gutiérrez Ruiz en Uruguay. Algo similar ocurre con el estudio de @Dancy2022, cuya base de datos incluye casos de comisiones de la verdad celebradas dentro y fuera de un contexto de transición democrática o del término de una guerra civil, como la Comisión para la Verdad y la Reconciliación de Canadá, que investigó los abusos a los derechos humanos cometidos en los pensionados para niños indígenas entre las décadas de 1870 y 1940.
+
+Además, los estudios que examinan las amnistías tampoco logran hacer distinciones cualitativas sólidas. @Snyder2003 y @Olsen2010a tratan las amnistías como variables ficticias. Dentro de esta categoría incluyen amnistías derivadas de acuerdos de paz o de transiciones negociadas, o que son dictadas por gobiernos post autoritarios o post conflicto en favor de criminales de guerra, criminales de lesa humanidad, miembros de grupos insurgentes, entre otros. En cambio, @Dancy2019 definen las amnistías como disposiciones legales que favorecen sólo a criminales de lesa humanidad procesados o condenados por los tribunales de justicia, y -en base a esa definición- cuentan el número de leyes o decretos de amnistías que son dictados en cada país en los años posteriores al retorno de la democracia.
+
+### 2. 1. Diferencias en la elección de variables dependientes
+
+En segundo lugar, los estudios comparados utilizan diferentes medidas de resultado para analizar la contribución de los mecanismos de justicia transicional a la democracia y la protección de los derechos humanos. Este problema es particularmente agudo en los estudios que analizan la contribución de los juicios, amnistías y comisiones de la verdad a la democratización de los países. La mayoría de los autores utilizan las escalas de democracia liberal de los proyectos CIRI, Freedom House y Polity IV [@Dancy2019; @Olsen2010a; @Snyder2003], mientras que otros utilizan indicadores desagregados de reformas institucionales y prácticas democráticas [@Dancy2022]. En ambos casos, los indicadores empleados dan cuenta de los niveles de participación, competencia y apertura electoral, de libertad de prensa, de libertad sindical, de control judicial sobre el poder ejecutivo y de otras dimensiones de la vida pública que poco tienen que ver con los objetivos manifiestos de verdad, justicia, reparación y garantías de no repetición que guían la implementación de los mecanismos de justicia transicional. Por tanto, resulta teóricamente problemático formular argumentos causales sobre el impacto de los mecanismos de justicia transicional en los aspectos de la democracia que son medidos por los proyectos CIRI, Freedom House y Polity IV. Sin embargo, otros aspectos que podrían ser más relevantes, como la ocurrencia de intentos de golpes de estado o de ataques armados en contra de la población civil, no han sido totalmente explorados hasta ahora.
+
+Comparativamente hablando, existe un mayor consenso sobre las medidas utilizadas para juzgar el impacto de la justicia transicional en la protección de los derechos humanos. @Kim2010, @Olsen2010a y @Dancy2019, utilizan la medida de derechos humanos de Cingranelli y Richards (CIRI) [@Cingranelli2010], que se centra en la protección de los derechos de integridad física. @Olsen2010a también utilizan la Escala de Terror Político (PTS) [@Wood2010] como control de solidez para sus resultados. Tanto CIRI como PTS proporcionan puntuaciones de derechos humanos de los países basadas en informes anuales de derechos humanos elaborados por el Departamento de Estado de Estados Unidos y Amnistía Internacional, donde se reportan los casos de asesinatos, desapariciones forzadas, torturas y prisión política. En teoría, ambas medidas son útiles para analizar los posibles efectos disuasorios de los juicios, amnistías y comisiones de la verdad. Sin embargo, son comparativamente menos eficaces que el índice de integridad física latente desarrollado recientemente por [@Schnakenberg2013]. Este último indicador estima un puntaje de protección de los derechos humanos para cada año-país en base a un modelo bayesiano de respuesta al ítem ordinal que utiliza diferentes fuentes de información estadística, como las escalas de CIRI y PTS, y los indicadores del proyecto UPSALA/PRIIO que registran eventos represivos asociados a la violación masiva de los derechos de integridad física. Hasta ahora, el índice de integridad física latente ha estado restringido al estudio del impacto de las comisiones de la verdad [@Dancy2022]. Por tanto, es posible generar nuevo conocimiento utilizando este indicador para analizar la contribución de otros mecanismos de justicia transicional a la protección de los derechos humanos.
+
+El desafío metodológico aquí es seleccionar y aplicar medidas de resultado adecuadas y coherentes para evaluar la contribución de la justicia transicional a la democracia y la protección de los derechos humanos. La selección de los indicadores y medidas de resultado debe basarse tanto en los argumentos teóricos de causalidad formulados por los enfoques de la justicia transicional como en la calidad metodológica de los indicadores disponibles.
+
+### 2. 3. Diferencias en las estrategias de muestreo
+
+En tercer lugar, los estudios comparados discrepan sobre el universo relevante de casos a analizar. Algunos consideran sólo los casos de países que experimentaron transiciones democráticas [@Dancy2019; @Kim2010] o post conflicto [@Snyder2003], y otros consideran ambos tipos de transiciones [@Dancy2022]. Estas diferencias en los criterios de selección de casos genera observaciones ampliamente divergentes para el análisis. Por tanto, no es posible generalizar los resultados entre los países que cerraron exitosamente un conflicto armado interno, y los países que experimentaron transiciones democráticas.
+
+Lo mismo ocurre con los pasados autoritarios de los países que se analizan. Los estudios utilizan diferentes criterios de selección de casos. La mayoría utiliza muestras grandes que incluyen países con diferentes tipos de pasados autoritarios, como dictaduras cívico-militares, regímenes de partido único, teocracias étnico-religiosas, entre otras [@Dancy2019; @Dancy2022; @Olsen2010a]. Si bien el uso de muestras grandes supone una ventaja en términos cuantitativos, comparar los resultados de la justicia transicional en países con pasados autoritarios cualitativamente distintos puede ser problemático por varias razones:
+
+a) **Contexto histórico y cultural**
+
+Cada país y región tiene una historia, cultura y contexto político únicos. Los factores históricos, culturales y sociales pueden influir en la manera en que se abordan los abusos pasados y en cómo se perciben los procesos de justicia transicional. Lo que puede funcionar en un lugar podría no ser efectivo o adecuado en otro debido a estas diferencias. Los estudios analizados tratan de abordar este problema a través del uso de variables de control con alcance regional que no consideran las diferencias cualitativas (históricas, ligúisticas, culturales y geográficas) entre los países, lo que aumenta significativamente el riesgo de variable omitida.
+
+b) **Naturaleza de los conflictos y abusos a los derechos humanos**
+
+Los tipos de abusos, crímenes y conflictos son diferentes en cada región. Las circunstancias en las que ocurrieron los abusos y las dinámicas de los conflictos también son diversas. Durante las dictaduras cívico- militares en América Latina, especialmente en las décadas de 1970 y 1980, los abusos a los derechos humanos a menudo incluyeron desapariciones forzadas, tortura y ejecuciones extrajudiciales. Hubo una tendencia a la represión de movimientos sociales y políticos, así como a la censura de medios de comunicación y la persecución de opositores políticos de izquierda. En Asia, los abusos a los derechos humanos bajo regímenes autoritarios a menudo incluyeron represión contra minorías étnicas o religiosas, y la supresión de movimientos de independencia. En Europa del Este, durante la Guerra Fría, los regímenes comunistas impusieron un control estatal sobre la sociedad y restringieron severamente las libertades civiles y políticas. En europa occidental, las dictaduras de ultraderecha, como las de España y portugal, perpetraron abusos graves a los derechos humanos bajo un patròn orientado fundamentalmente contra determinados grupos étnicos, políticos y nacionalistas, que implicaron incluso la persecución de comunidades lingüísticas y minorías religiosas. Estas diferencias contextuales y de modalidades de represión pueden influir significativamente en la elección de los mecanismos de justicia transicional y en los desafíos específicos que enfrenta cada sociedad [@Stewart2017]. Sin embargo, es dificil que pueden ser captadas por las variables de control empleadas en los estudios cuantitativos.
+
+c) **Recursos y capacidad institucional**
+
+La capacidad de los países para llevar a cabo procesos de justicia transicional puede variar significativamente. Los países que recuperan una tradición democrática luego de un periodo excepcional de autoritarismo, suelen tener mayores recursos legales, sistemas judiciales más fortalecidos y una infraestructura institucional más adecuada para llevar a cabo investigaciones y enjuiciamientos exhaustivos en contra de los criminales de lesa humanidad, en comparación con los países que se independizan de regímenes autoritarios disueltos o que atraviesan periódicamente por conflictos armados de naturalesa étnica o religiosa. Estas diferencias de recursos y capacidad institucional puede afectar la elección y la eficacia histórica de los mecanismos de justicia transicional [@Carrasco2022].
+
+En resumen, aunque existen principios generales de justicia transicional que son aplicables a los casos de países con pasados violentos o autoritarios, cada contexto regional es único y debe ser abordado teniendo en cuenta las características específicas de la sociedades en cuestión. La comparación directa entre países con diferentes legados violentos o autoritarios, o diferentes tipos de transición, puede simplificar en exceso los desafíos complejos y las consideraciones que están involucradas en cada caso.
+
+
+## 3. Propuesta de Investigación
+
+Los factores de inconsistencia señalados anteriormente representan importantes desafíos para la investigación empírica sobre la contribución de los mecanismos de justicia transicional a la democracia y la protección de los derechos humanos. En la presente tesis de magister se abordan estos desafíos a través de una estrategia de investigación novedosa que utiliza definiciones coherentes, datos y observaciones comparables, e indicadores adecuados que capturan las diferencias cuantitativas y cualitativas de los enjuciamientos, amnistías y comisiones de la verdad.
+
+### 3. 1. Definiciones del derecho internacional e indicadores del TJRC
+
+Para superar el desafío vinculado a la definición y medición de las variables de interés, se utilizan los conceptos del derecho internacional de los derechos humanos, y los indicadores desarrollados por el *Transitional Justice Research Collaborative* (TJRC).
+
+En el derecho internacional, al igual que en la teoría sociológica, los mecanismos de justicia transicional son entendidos como tecnologías sociales que permiten abordar las consecuencias de los pasados autoritarios marcados por el uso masivo y sistemático de la violencia estatal [@Teitel2003]. Bajo esta definición, los estudios recientes, por ejemplo, codifican sólo los enjuiciamientos contra criminales de lesa humanidad y excluyen los juicios contra miembros de la resistencia armada, de grupos insurgentes o de partidos políticos de oposición al régimen autocrático (@Dancy2019). Este criterio resulta del todo adecuado si se considera que el resultado esperado del enjuiciamiento de violadores de derechos humanos es la disuasión de la conducta criminal entre los agentes del estado.
+
+El TJRC es un proyecto académico que define y registra los enjuiciamientos, sentencias y amnistías por violaciones a los derechos humanos cuando estos refieren expresamente a delitos perpetrados por agentes estatales o por privados que operaron con su aquiescencia durante el pasado autoritario reciente. Por tanto, la definición de las variables de interés dentro de este conjunto de datos es consonante con la categorización formulada por los instrumentos del derecho internacional y las teorías sociológicas sobre el impacto de la justicia transicional.
+
+Además, el TJRC dispone de una base de datos con variables que miden la frecuencia y calidad de los mecanismos de justicia transicional, a través de indicadores que dan cuenta del número de enjuiciamientos, sentencias y amnistías por violaciones de derechos humanos que son emitidas en cada año-país, al igual que el número de comisiones de la verdad que inician o culminan su mandato y que entregan recomendaciones de reforma o enjuiciamiento de criminales de lesa humanidad. También hay indicadores agregados de justicia transicional, como el número de enjuiciamientos, sentencias, amnistías y comisiones de la verdad acumuladas durante los años de transición, que permiten medir el avance de los países en estas materias.
+
+A diferencia de los estudios que utilizan variables dicotómicas para medir el uso de juicios, amnistías y comisiones de la verdad, y contar los años de transición en los que se implementó cada uno de ellos [@Olsen2010a; @Kim2010], el uso de los datos del TJRC permite utilizar indicadores conceptualmente precisos que registran la frecuencia y la calidad de los mecanismos de justicia transicional. Lo cual supone una mejora significativa en la medición de las variables de interés.
+
+### 3. 2. Medidas de protección de la democracia y los derechos humanos
+
+Para abordar el desafío de la observación de resultados (elección de variables dependientes), se diseñaron modelos de análisis que buscan explicar la ocurrencia de golpes de Estado y la variación en los niveles de protección de los derechos humanos de integridad física, en base al uso individual y combinado de los mecanismos de justicia transicional.
+
+La incorporación de los golpes de Estado como variables de resultado de la justicia transicional en la democracia se justifica en la medida que este indicador registra hechos que representan una amenaza real para la continuidad del proceso de transición. Según los académicos del enfoque realista de la justicia transicional [@Snyder2003], el uso de enjuiciamientos penales por violaciones de derechos humanos y de comisiones de la verdad que incentivan la rendición de cuentas judiciales puede activar a los potenciales saboteadores del proceso de transición, aumentando significativamente el riesgo de golpes de estado.
+
+A diferencia de los estudios anteriores, que utilizaron diferentes medidas de resultado para medir la contribución de los mecanismos de justicia transicional a la democracia -desde indicadores agregados de democracia liberal hasta viables desagregadas de prácticas y reformas institucionales democráticas-, la presente tesis se enfoca sólo en medir la eficacia de la función manifiesta de la justicia transicional de prevenir la ocurrencia de golpes de estado que puedan poner en riesgo la continuidad del proceso de transición democrática. Al hacer esta reducción en el análisis de resultados, se cree que es posible establecer teóricamente un vínculo causal adecuado entre el uso de enjuiciamientos, amnistías y comisiones de la verdad, y la prevención de golpes de Estado en los países con democracias post autoritarias.
+
+En cuanto a la protección de los derechos humanos, la presenta tesis utiliza Índice de Integridad Física Latente de @Schnakenberg2013, que estima el nivel de protección de los derechos de integridad física a través de un modelo dinámico de respuesta al ítem ordinal que incorpora la información disponible en otras fuentes de datos y reduce el sesgo de medición que generan los cambios en los estándares de derechos humanos a lo largo del tiempo [@Clark2013, 175-177] 
+
+Cómo se explicará más adelante, el Índice de Integridad Física Latente de Schnakenberg y Fariss es el indicador más robusto de protección de los derechos humanos desarrollado hasta ahora [@Fariss2017]. Por ello, el uso de este indicador supone una mejora sustantiva en la medición del impacto de la justicia transicional en los países con democracias post autoritarias.
+
+### 3. 3. Muestra de países de América Latina con pasados autoritarios recientes
+
+Para superar los desafíos teóricos y metodológicos relacionados con las estrategias de muestreo y la comparabilidad de los casos de estudio, se diseñó una investigación empírica que analiza la contribución de los mecanismos de justicia transicional a la democracia y la protección de los derechos humanos sólo en los países de América Latina y el Caribe que experimentaron transiciones democráticas entre los años 1970 y 2010. La elección de este universo de estudio se basó en dos criterios teóricos y metodológicos.
+
+El primer criterio, es la similitud de los pasados autoritarios recientes en la región. Durante los años 1970 y 1980, diez y siete de los treinta y tres países de América Latina y el Caribe fueron gobernados por dictaduras civiles y militares que violaron de forma sistemática y generalizada los derechos humanos. Todas ellas hicieron uso de la prisión política, la tortura, el asesinato y la desaparición forzada para eliminar la disidencia y mantener el control social de la población a través del terror estatal.
+
+Según Manuel @Guerrero2023, el terrorismo de Estado latinoamericano se distingue sociológicamente de otras formas de violencia estatal masiva y unilateral (masacres) desarrolladas durante el siglo XX en los países de Europa, Asia y África, porque persigue fines y medios diferentes. Los regímenes autoritarios de América Latina hicieron uso de la violencia estatal para disciplinar a la población, y eliminar a los cuerpos disidentes, en base a un discurso político enfocado en el combate a la subversión y al comunismo internacional. En cambio, el genocidio en Ruanda (1994), la masacre de Srebrenica en Bosnia (1995) y el genocidio camboyano bajo el régimen de los Jemeres Rojos (década de 1970) son fenómenos de violencia estatal que involucraron el asesinato masivo y la persecución de comunidades étnicas o religiosas específicas, con el objetivo de eliminar para siempre a estos grupos.
+
+En este sentido, al considerar sólo los casos de países de América Latina y el Caribe con pasados autoritarios recientes, se construye una muestra de análisis mucho más homogénea que la elaborada por los estudios anteriores. Lo que, en teoría, disminuye el sesgo de variable omitida y mejora los niveles de observación de los resultados y el desarrollo de vínculos causales entre los mecanismos de justicia transicional y la protección de la democracia y los derechos humanos. Sin embargo, la reducción del universo de análisis a los casos de un sólo continente implica también que sus resultados no son generalizables, y que, por tanto, no aplican a los países con regímenes post autoritarios desarrollados en otros contextos regionales.
+
+El segundo criterio de selección de casos fueron los tipos de transiciones. En la presente tesis, se analiza la contribución de los mecanismos de justicia transicional a la democracia y la protección de los derechos humanos sólo en los países que experimentaron al menos un proceso de transición democrática entre los años 1970 y 2010. Bajo este criterio, se excluyeron del análisis países como Colombia que, aunque no tuvieron una dictadura en el sentido tradicional, experimentaron un conflicto armado interno de larga duración con grupos guerrilleros, paramilitares y narcotraficantes durante todo el periodo de estudio. Al hacer esta reducción del universo, se consideró que no es conveniente analizar sociológicamente los casos de transiciones que no son iguales, sin distinguir entre las transiciones democráticas, que son los casos emblemáticos de la justicia transicional [@Teitel2003; @Thoms2010], y los casos de países en conflicto interno que lidian con los crímenes de guerra y el *jus postbellum*.
+
+En el próximo capítulo, se presentarán los objetivos de investigación  que guíaron el estudio de esta tesis, abordando los desafíos planteados por la literatura revisada. Dichos objetivos orientaran el desarrollo de un marco teórico y metodológico que permita analizar sociológicamente la relación entre el uso de uno o varios mecanismos de justicia transicional y los niveles de protección de la democracia y los derechos humanos en América Latina y el Caribe durante los últimos cincuenta años (o al menos, en el periodo que es posible medirla: 1970-2010).
+
+
+# OBJETIVOS DE INVESTIGACIÓN
+
+En el capítulo anterior, se planteó un diseño de investigación enfocado en desarrollar un marco analítico riguroso para evaluar la contribución de los mecanismos de justicia transicional a la democracia y la protección de los derechos humanos en América Latina y el Caribe. Esta propuesta busca superar las inconsistencias y limitaciones encontradas en la literatura previa sobre el tema. Para lograrlo, se propone la selección de indicadores adecuados, la consideración de las diferencias contextuales y de modalidades de represión, y la exploración del impacto de estos mecanismos en la prevención de golpes de Estado y la protección de los derechos de integridad física de las personas. 
+
+En este capítulo, se establece que el objetivo principal de la tesis es evaluar la contribución de los mecanismos de justicia transicional a la prevención de golpes de estado y la protección de los derechos humanos en los países de América Latina y el Caribe que experimentaron transiciones democráticas entre los años 1970 y 2010. Los objetivos específicos son:
+
+a) Analizar la contribución de los enjuiciamientos, amnistías y comisiones de la verdad
+a la prevención de golpes de estado en los países de América Latina y el Caribe durante los años posteriores a la primera transición democrática experimentada en el periodo 1970-2010.
+b) Analizar la contribución de los enjuiciamientos, amnistías y comisiones de la verdad a la protección de los derechos humanos de integridad física en los países de América Latina durante los años posteriores a la primera transición democrática experimentada en el periodo 1970-2010.
+
+Los objetivos formulados se limitan al periodo 1970-2010, porque los datos disponibles sobre enjuiciamientos, setencias, amnistías y comisiones de la verdad por violaciones a los derechos humanos en los países sólo han sido sistematizados a nivel regional para este periodo en los proyectos académicos anteriores [@Dancy2019; @Dancy2022]. Esto significa que el análisis propuesto en la tesis no puede abordar eventos más recientes o futuros de justicia trasicional y por tanto, su vínculo con la prevención de golpes de estado y la protección de los derechos humanos en periodos posteriores. Sin embargo, los datos disponibles aún son útiles para analizar sociológicamente la contribución histórica de la justicia transicional en la región.
+
+
+# MARCO TEÓRICO
+
+El marco teórico de esta tesis se centra en definir los conceptos clave de la investigación; es decir, los golpes de estado, la protección de los derechos humanos y la justicia transicional; y analizar su relación sobre la base de tres enfoques teóricos distintos desarrollados por los académicos del campo de estudio: el realismo, el constructivismo y el holismo.
+
+Las definiciones y discusiones teóricos desarrollados en este capítulo son el fundamento desde el cual se derivan las hipótesis de investigación que analizan la contribución de los enjuiciamientos, amnistías y comisiones de la verdad a la prevención de golpes de estado y la protección de los derechos humanos en los países con regímenes políticos post autoritarios.
+
+## 1. Conceptos clave
+
+La definición de los conceptos centrales de la tesis se realiza en base a la literatura académica que utiliza las definiciones de la sociología, la ciencia política y el derecho penal internacional para referirse a los fenómenos relacionados con los golpes de estado, la protección de los derechos humano y el uso de mecanismos de justicia transicional (enjuiciamientos, amnistías y comisiones de la verdad).
+
+### 1. 1. Golpes de estado
+
+En la ciencia política los golpes de estado son definidos como intentos ilegales y abiertos por parte de los militares u otras élites dentro del aparato estatal de derrocar al ejecutivo en funciones [@Powell2011, 252]. Dentro de esta definición es posible distinguir dos tipos de golpes de estado, que se diferencian por la capacidad de agencia que tienen sus perpetradores. El primero, son los “golpes de oficiales de elite” que aluden a cualquier golpe exitoso o fallido llevado a cabo por el liderazgo militar de un país, compuesto por miembros del jefe de Estado Mayor, oficiales en consejos de mando y comandantes de las unidades funcionales de un ejército (ejército, fuerza aérea, marina). El segundo tipo, son los “golpes de oficiales de combate” que refieren a cualquier golpe exitoso o fallido planeado por oficiales de rango medio e inferior; Los conspiradores de esta última categoría pueden incluir oficiales individuales de rango superior, como oficiales con el rango de general o mayor, que no son miembros del liderazgo militar. La diferencia clave, según @Albrecht2018, es que los oficiales de élite son miembros de coaliciones gobernantes autoritarias, y los oficiales de combate no lo son (p. 318).
+
+Considerando esta distinción, en la presente tesis se utiliza el término protección contra golpes de estado para referir a las estrategias destinadas a reducir la capacidad o los incentivos de las elites civiles y militares para dar un golpe [@Powell2012, 1018]. En el contexto de una transición las medidas empleadas por los países para protegerse de un golpe pueden ser muy variadas. Desde la aplicación de viejas y nuevas leyes de amnistía para oficiales de alto rango acusados de violar derechos humanos [@Snyder2003; @Vinjamuri2015], hasta la frecuente rotación del Alto Mando y la reorganización de las fuerzas armadas vía reforma institucional [@Talmadge2016]. La adopción de una o más de estas medidas está condicionada, obviamente, a variables del contexto político local, como el tipo de transición democrática, la capacidad de veto de la oposición y las cuotas de poder institucional que guardan los potenciales saboteadores del proceso.
+
+### 1. 2. Protección de los derechos humanos
+
+En las ciencias sociales, generalmente se utiliza el concepto de protección (de las violaciones) de los derechos humanos para referirse a las prácticas que buscan evitar la ocurrencia de actos ejercidos por agentes del Estado que atentan contra los derechos de integridad física de las personas que se encuentran bajo su jurisdicción [@Fariss2017; @Poe1999; @Richards2015]. Las violaciones a la integridad física incluyen la desaparición forzada, el asesinato, las ejecuciones sumarias o extrajudiciales, la tortura y otros tratos crueles, y la prisión política o arbitraria [@Cingranelli2010; @Schnakenberg2013; @Wood2010].
+
+De acuerdo con lo establecido en el derecho internacional, las violaciones a los derechos de integridad física que constituyen violaciones de derechos humanos sólo pueden ser perpetradas, ordenadas o sancionadas por agentes del Estado, o por algún privado que opere con la anuencia de éste (Estatuto de Roma de La Corte Penal Internacional, 1998). Por tanto, el concepto de violación de derechos humanos describe materialmente los delitos cometidos por diferentes actores institucionales: los miembros del gobierno; los policías, guardias, personal de seguridad o cualquier otro tipo de agente encargado de velar por el orden público; los miembros de organizaciones militares o de organizaciones paramilitares; los miembros de las Fuerzas Armadas; los funcionarios de los servicios públicos; los agentes de los servicios de inteligencia; los miembros del sistema de justicia (donde se incluyen también las instituciones encargadas de cuidar a las personas que están bajo custodia del Estado); y/o los funcionarios de un Estado extranjero o de un Organismo Internacional [@Haschke2019].
+
+Es importante señalar que el concepto de violación de derechos humanos empleado por las ciencias sociales no distingue entre aquellas violaciones a los derechos de integridad física que se cometen con motivos políticos y aquellas que no se comenten con motivos políticos, puesto que la doctrina y el enfoque del derecho internacional establece que las vulneraciones a los derechos fundamentales de las personas pueden ocurrir dentro o fuera de un contexto autoritario o represivo [@BuenoDeMesquita2005; @Davenport2004a; @Davenport2007a]. La tortura ejercida por agentes del Estado, por ejemplo, es considerada una violación a los derechos humanos, aunque esta no se desarrolle en el marco de una política terrorista o de exterminio dirigida contra las personas que forman parte de la oposición política de la dictadura o del gobierno democrático de turno [@Beger2019; @Conrad2018; @McGregor2013]. Por tanto, el régimen político y la motivación política es una variable independiente de la violencia estatal que conlleva violación a los derechos humanos, al igual que otras.
+
+La literatura producida por los estudios macro cuantitativos muestra que la protección de los derechos humanos está fuertemente relacionada con el nivel de conflictividad de los países, el tipo de régimen político, el nivel de independencia del poder judicial y otras variables económicas y demográficas [@Keith2012]. Según estos estudios, la violencia estatal aumenta en aquellos países que atraviesan por conflictos armados (guerras civiles o guerras internacionales) [@Cingranelli2019] o que enfrentan periodos de revueltas o rebeliones sociales que conducen al uso de la acción represiva de las fuerzas de orden y seguridad frente al aumento de manifestaciones violentas [@Franklin2019; @Jackson2018]. Los estudios también relacionan la disminución de los niveles de violencia estatal con el aumento en los niveles de democracia, medidos a través la transformación en las prácticas y arreglos institucionales que regulan el ejercicio de poder y establecen un sistema vertical de rendición de cuentas [@BuenoDeMesquita2005; @Davenport2004a]. Además, en cuanto a las variables económicas y demográficas, la literatura muestra que los niveles de violencia estatal dependen del tamaño y crecimiento de la población, y del nivel de riqueza (PIB), de desigualdad y crecimiento económico de los países, ya que la probabilidad de que exista represión es mayor cuando los gobernantes y las fuerzas de orden y seguridad se enfrentan a poblaciones grandes y/o empobrecidas [@Keith2012].
+
+### 1. 3. Justicia Transicional
+
+El concepto de justicia transicional refiere a todas aquellas medidas implementadas por los gobiernos para enfrentar las consecuencias jurídicas, sociales y políticas que dejan los pasados violentos y/o autoritarios, marcados por el ejercicio de violaciones sistemáticas o generalizadas de los derechos humanos [@Teitel2003]. Las medidas de justicia transicional son implementadas generalmente en contextos de transición política (es decir, durante o después del término de una guerra civil o de una dictadura, y en medio de la reconstrucción democrática de un Estado) con el doble objetivo de a) entregar verdad, justicia y reparación a las víctimas y sus familiares, y b) garantizar la no repetición de las violaciones a los derechos humanos en el futuro [@InstitutoNacionaldeDerechosHumanos2017, 192]. Entre las medidas de justicia transicional se incluyen los juicios penales por violaciones a los derechos humanos, las amnistías, las comisiones de la verdad, las políticas de memorialización, los programas de reparación integral para las víctimas y sus familiares, la revisión de antecedentes, las purgas y las reformas institucionales. Sin embargo, las más estudiadas por los académicos a nivel cuantitativo son los juicios y las comisiones de la verdad [@Fariss2017; @Stewart2017; @Thoms2010].
+
+#### 1. 3. a. Enjuiciamientos
+
+En el contexto de una transición democrática, el enjuiciamiento es entendido como un proceso penal —que incluye juicios preliminares, audiencias de juicio y veredictos y sentencias— contra agentes estatales perpetradores de violaciones de derechos humanos que ocurrieron antes de la transición política al régimen democrático [@Dancy2019, 104]. Generalmente, los académicos examinan bajo este concepto los casos judiciales que operan en los tribunales nacionales de un país o en la Corte Penal Internacional u otros tribunales regionales o internacionales [@Kim2010; @Sikkink2011]. Sin embargo, estudios recientes sugieren que es conveniente analizar los efectos de esta variable incluyendo sólo los casos nacionales de responsabilidad penal individual, ya que éstos dan cuenta del nivel de compromiso estatal que se tiene con los derechos humanos [@Dancy2019].
+
+Según la literatura científica existen cuatro factores clave relacionados con el uso o aumento de enjuiciamientos penales por violaciones de derechos humanos en los países en transición: la demanda de la sociedad civil, la ausencia de jugadores con veto, el liderazgo judicial nacional y la presión internacional [@Lessa2014]. El primer factor, se basa en la evidencia acumulada por los estudios de caso que demuestran que los movimientos locales de derechos humanos, compuestos por organizaciones de la sociedad civil que surgieron durante el régimen autoritario y que continúan movilizándose por la justicia durante y después de la transición democrática, tienen los recursos políticos y organizativos para demandar eficazmente el enjuiciamiento de los criminales de lesa humanidad, y combatir la impunidad que genera el uso de amnistías. El segundo factor, se basa en la importancia que tiene la ausencia o presencia de jugadores con veto en los procesos de justicia transicional. Es decir, de actores poderosos que podrían oponerse a la rendición de cuentas o la investigación de las violaciones de derechos humanos ocurridas en el pasado. En este sentido, la presencia de jugadores con veto suele estar asociada con altos niveles de impunidad, mientras que la ausencia de ellos facilita los procesos de enjuiciamiento. El tercer factor hace referencia al rol que desempeñan los abogados particulares, los jueces y otros actores locales del sistema judicial en las democracias post autoritarias. Un poder judicial independiente que conozca los principios democráticos del derecho a reparación y las normas internacionales de derechos humanos puede estar dispuesto a desafiar la impunidad e incentivar la rendición de cuentas, tanto en el corto como en el largo plazo. El cuarto factor refiere a la presión que ejerce la comunidad internacional a través de las obligaciones legales incorporadas en tratados y fallos de tribunales regionales. Los acuerdos internacionales de derechos humano que son jurídicamente vinculantes establecen expresamente el deber de los Estados de enjuiciar a los funcionarios públicos que cometan o hayan cometido delitos tipificados en la Convención para la Prevención y la Sanción del Genocidio [-@ONU1948], la Convención contra la Tortura y Otros Tratos o Penas Crueles, Inhumanos o Degradantes [-@ONU1984], la Convención Internacional para la Protección de todas las Personas contra las Desapariciones Forzadas [-@ONU2010], la Convención de Ginebra [-@ONU1949] y el Estatuto de Roma de la Corte Penal Internacional [-@CPI1998].
+
+#### 1. 3. b. Amnistías
+
+En la presente tesis, utilizaremos el término “amnistía” para hacer referencia a las disposiciones legislativas, constitucionales o ejecutivas vigentes que otorgan inmunidad judicial por violaciones de derechos humanos cometidas por agentes estatales durante el régimen autoritario anterior [@Dancy2019, 104]. Generalmente, las amnistías son políticas gubernamentales propuestas por presidentes, dictadores o legisladores y, por lo general, solo confirmadas o impugnadas por procesos judiciales, que buscan garantizar la estabilidad política de los procesos de transición [@Snyder2003; @Vinjamuri2015].
+
+Según los autores que promueven el uso de amnistías en los procesos de transición, el principal factor asociado a la mantención o adopción de estas leyes es la necesidad que tienen los gobiernos emergentes de garantizar la estabilidad política y el estado de derecho, evitando cualquier tipo de insurrección por parte de los potenciales agentes saboteadores [@Snyder2003; @Vinjamuri2015]. Por ello, la amnistía para violadores de derechos humanos puede ser entendida como una medida de protección contra los golpes de estado.
+
+#### 1. 3. c. Comisiones de la Verdad
+
+Por su parte, las comisiones de la verdad refieren a organismos temporales y oficialmente sancionados, que se constituyen con el mandato de investigar períodos específicos de abusos estatales ocurridos en el pasado [@Dancy2022; @Kim2019; @Olsen2010]. Su finalidad explícita es establecer la verdad sobre los abusos pasados y evitar que se repitan en el futuro [@Hayner2008]. Por lo mismo, una Comisión de Verdad puede: a) proporcionar un reconocimiento oficial de las violaciones de derechos humanos del pasado, reescribiendo la historia; b) centrarse en los factores institucionales y estructurales que permitieron tales abusos; c) hacer recomendaciones para reformas legales e institucionales; d) proporcionar información que sea útil para los enjuiciamientos posteriores y la investigación de antecedentes entre los miembros abusivos de las fuerzas de orden y seguridad; y e) crear un listado oficial de víctimas que permita la realización de políticas de memorialización y de reparación integral (Hayner, 2008; Rivas, 2016).
+
+Las investigaciones sobre justicia transicional afirman que el cumplimiento de los objetivos de prevención de violaciones a los derechos humanos de una comisión de verdad depende, en gran medida, de la calidad de estas. Es decir, de si la comisión en cuestión emite o no un informe público, y de si hace o no recomendaciones de reformas o entrega información importante para la realización de juicios penales por abusos del pasado [@Bakiner2014; @Dancy2022]. Por tanto, es conveniente distinguir cada una de estas operaciones en indicadores diferentes que permitan monitorear las prácticas asociadas a las comisiones de la verdad y medir su contribución a la no repetición.
+
+Según un estudio reciente de @Kim2019, la adopción de una comisión de verdad por parte de los gobiernos democráticos post autoritarios depende significativamente de dos factores clave: las redes transnacionales (locales y extranjeras) de promoción de las comisiones de la verdad, y la difusión de la experiencia de una comisión de verdad entre los países vecinos. La existencia de organizaciones y movimientos de derechos humanos activos y fuertes es un factor significativo que afecta la decisión de un estado de establecer una comisión de verdad. El efecto que puede producir un movimiento nacional de derechos humanos sobre la adopción gubernamental de una comisión de verdad es aún mayor si su demanda de verdad es apoyada por organismos del sistema de Naciones Unidas y otras organizaciones no gubernamentales de carácter transnacional. Además, el estudio muestra que los gobiernos de los países con democracias post autoritarias son más propensos a adoptar una comisión de verdad si uno de sus países vecinos ya lo ha hecho. Este efecto de difusión se produce al compartir experiencias de justicia transicional entre países con características culturales, geográficas y políticas similares (por ejemplo, entre las democracias post autoritarias instauradas en América Latina luego del periodo de dictaduras de seguridad nacional de los años 1970 y 1980).
+
+Además de los dos factores clave mencionados, el estudio de @Kim2019 muestra que la adopción de una comisión de la verdad también está relacionada con el nivel de democracia y desarrollo económico alcanzado por los países en transición. Los países con un alto nivel de democracia, medidos por la puntuación polity IV, parecen ser más propensos a establecer comisiones de la verdad que los países con bajos niveles de democracia o que enfrentan periodos autoritarios. Asimismo, los datos de estudio muestran que los gobiernos post autoritarios de los países con recursos económicos crecientes son más propensos a adoptar comisiones de la verdad que los que atraviesan por periodos de crisis o bajo crecimiento económico, ya que pueden dedicar más esfuerzos políticos a las cuestiones relacionadas con las violaciones de los derechos humanos ocurridas en el pasado.
+
+## 2. Teorías e hipótesis de investigación
+
+Según @Dancy2019 y @Stewart2017, la investigación empírica sobre justicia transicional, democracia y protección de los derechos humanos presentada en el Capítulo II. 1., ha generado tres enfoques teóricos y normativos contrapuestos: el realismo político, el constructivismo y el holismo. En base a cada uno de estos enfoques es posible formular diferentes hipótesis de investigación sobre la contribución de los enjuiciamientos, amnistías y comisiones de la verdad a la prevención de golpes de estado y la protección de los derechos humanos en las democracias post autoritarias.
+
+### 2. 1. Enfoque realista
+
+El realismo político es el enfoque promovido por los académicos de la justicia transicional que cuestionan la adopción de políticas de rendición de cuentas en derechos humanos que puedan alterar el equilibrio de "intereses políticos dominantes" en la transición y poner en riesgo la nueva democracia [@Snyder2003; @Vinjamuri2015]. La hipótesis central de estos autores es que los gobiernos post autoritarios que llevan adelante enjuiciamientos penales contra ex violadores de derechos humanos enfrentarán una mayor amenaza de golpes militares y rebeliones violentas, y tendrán más partidos insatisfechos que cuestionen la legitimidad de la nueva democracia [@Snyder2003]. Por tanto, bajo este enfoque, las amnistías y la impunidad son vistas como males necesarios; es decir, como medidas responsables que buscan garantizar la estabilidad política y el estado de derecho; mientras que el enjuiciamiento penal, la revisión de antecedentes, y la realización de reformas institucionales a las fuerzas de orden y seguridad son vistas como medidas temerarias, que, al afectar al personal represivo de la autocracia saliente, ponen en riesgo la democracia y la protección de los derechos humanos, sobre todo durante los primeros años de transición, que es el periodo en el que los potenciales saboteadores del proceso aún guardan importantes cuotas de poder institucional.
+
+El enfoque realista considera que las comisiones de verdad son potencialmente menos desestabilizadoras para las democracias que los enjuiciamientos penales, sobre todo si consideran el otorgamiento de amnistías para los criminales de lesa humanidad que contribuyan con la investigación [@Olsen2010a, 987]. En cambio, si las comisiones de verdad publican informes oficiales que recomienden el enjuiciamiento de los violadores de derechos humanos o la implementación de reformas estructurales a las fuerzas de orden y seguridad, generarán mayor riesgo de golpes de estado y de interrupción del proceso de transición democrática.
+
+Desde el enfoque realista se pueden formular las siguientes hipótesis:
+
+-	Hipótesis 1 (a): El aumento en el número de enjuiciamientos y condenas por violaciones de derechos humanos estará asociado con un aumento en el número de intentos de golpes de estado en los procesos de transición democrática
+
+-	Hipótesis 1 (b): El aumento en el número de amnistías para violadores de derechos humanos estará asociado con una disminución de los intentos de golpes de estado en los procesos de transición democrática
+
+-	Hipótesis 1 (c) La combinación de comisiones de verdad y enjuiciamientos por violaciones de derechos humanos estará asociada con un aumento en el número de intentos de golpes de estado en los procesos de transición democrática
+
+-	Hipótesis 1 (d): La combinación de comisiones de verdad y amnistías para violadores de derechos humanos estará asociada con una disminución de los intentos de golpes de estado en los procesos de transición democrática
+
+### 2. 2. Enfoque constructivista
+
+El segundo enfoque, el enfoque constructivista, reúne a los académicos que argumentan que los cambios legales internacionales y domésticos en materia de rendición de cuentas, y los esfuerzos de los activistas de derechos humanos y de los grupos pro-justicia que presionan a sus gobiernos, crean una demanda de justicia transicional por cambios institucionales y prácticos que ha contribuido significativamente a la no repetición [@Dancy2019; @Dancy2022; @Kim2010]. Estas normas y prácticas han modificado las percepciones de los actores sobre sus intereses y sus estrategias, ya que aumentan los costos penales, simbólicos y políticos asociados a la represión [@Sikkink2011; @Sikkink2013].
+
+Los académicos del enfoque constructivista, a diferencia de los realistas, han demostrado empíricamente sus afirmaciones, presentando evidencia estadística que sugiere que los enjuiciamientos penales de derechos humanos están asociados con menos violaciones a los derechos de integridad física en el largo plazo [@Dancy2019; @Kim2010]. Esto se debe a que la socialización normativa y el castigo material por violaciones de derechos humanos genera un efecto disuasorio que contribuye a mejorar la protección de los derechos de integridad física en las democracias post autoritarias [@Sikkink2011].
+
+Los estudios constructivistas sobre las comisiones de verdad muestran que este mecanismos de justicia transicional también puede contribuir significativamente a la protección de los derechos humanos en las democracias post autoritarias, en la medida que aumenta los costos simbólicos para los agentes represores [@Kim2010]. En este sentido, el enfoque constructivista asume que las comisiones de verdad, al igual que los juicios, cumplen una poderosa función comunicativa en las sociedades con democracias post autoritarias, ya que pueden propagar el estigma asociado a las violaciones a los derechos humanos ocurridas en el pasado autoritario. Además, si una comisión de verdad culmina con la publicación de un informe recomendando reformas o enjuiciamientos, entonces podrá reforzar la percepción de que los agentes y las instituciones estatales serán penal y políticamente responsables en el futuro, contribuyendo así a la prevención de la violencia política en las democracias post-autoritarias [@Dancy2022].
+
+Desde el enfoque constructivista es posible formular las siguientes hipótesis:
+
+-	Hipótesis 2 (a): El aumento en el número de enjuiciamientos y condenas por violaciones de derechos humanos estará asociado con un aumento en el nivel de protección de los derechos de integridad física.
+
+-	Hipótesis 2 (b): El aumento en el número de comisiones de verdad celebradas en las transiciones democráticas estará asociado con un aumento en el nivel de protección de los derechos de integridad física.
+
+-	Hipótesis 2 (c): La recomendación de enjuiciamientos que emiten las comisiones de verdad estará asociada con un aumento en el nivel de protección de los derechos de integridad física.
+
+### 2. 3. Enfoque hoslista
+
+El enfoque holista es aquel que reúne a los académicos que sostienen que la negociación para la estabilidad política y la disuasión criminal son procesos paralelos y necesarios para garantizar la paz, el estado de derecho y la protección de la integridad física y las libertades civiles de las personas en las transiciones democráticas. La perspectiva holística sostiene que los juicios y las amnistías funcionan en combinación y de manera complementaria para mejorar los derechos humanos y los resultados democráticos [@Olsen2010a]. Olsen, Payne & Reiter [-@Olsen2010a,147–148] desarrollaron este enfoque del "equilibrio de justicia", al afirmar que la combinación de juicios y amnistías es aditiva y que trabajan en conjunto para proporcionar "un término medio entre la rendición de cuentas y el apaciguamiento".
+
+Bajo este enfoque, las comisiones de verdad son vistas como medidas complementarias que contribuyen al equilibrio entre el impulso de rendición de cuentas y los imperativos de estabilidad política que imponen los procesos de transición a través de las amnistías [@Olsen2010]. Son entendidas como medidas complementarias al uso de juicios y amnistías porque, por sí solas, las comisiones de verdad no logran el objetivo de contribuir a la no repetición, ya que no son capaces de dar acceso a la justicia, ni de garantizar la estabilidad política de los procesos de transición. Sin embargo, cuando las comisiones van acompañadas de juicios y amnistías, pueden contribuir significativamente a la rendición de cuentas y la estabilidad política que brindan esos mecanismos a través del otorgamiento de incentivos para la colaboración de agentes del régimen anterior y la publicación de informes con recomendaciones para garantizar la no repetición de las violaciones a los derechos humanos [@Olsen2010].
+
+Según @Zalaquett1991, la adopción de medidas de justicia transicional bajo el enfoque holista va asociada a un entendimiento sociológico del quehacer político de los gobiernos en una transición democrática, que es la combinación de la ética de la convicción y la ética de la responsabilidad al momento de tomar decisiones.  En este sentido, los holistas proponen avanzar todo lo que se pueda en verdad, justicia, reparación y no repetición, sin poner en riesgo la democracia y el estado de derecho. Sugieren, por tanto, realizar la mayor cantidad posible de juicios y comisiones de verdad, manteniendo una cantidad mínima de amnistías y de agentes impunes que permita apaciguar a las fuerzas defensoras del ex régimen autocrático durante los primeros años de transición.
+
+Desde el enfoque holista es posible formular las siguientes hipótesis:
+
+-	Hipótesis 3 (a): La combinación de juicios y amnistías estará asociada con un aumento en el nivel de respeto de los derechos de integridad física.
+
+-	Hipótesis 3 (b): La combinación de juicios, amnistías y comisiones de verdad estará asociada con un aumento en el nivel de respeto de los derechos de integridad física.
+
+
+
+# METODOLOGÍA
+
+El capítulo tercero se estableció que el objetivo principal de la tesis es analizar la contribución de los mecanismos de justicia transicional a la prevención de golpes de estado y la protección de los derechos humanos en los países de América Latina y el Caribe que experimentaron transiciones democráticas entre los años 1970 y 2010. Para cumplir con este objetivo se desarrolló un estudio cuantitativo que busca explicar la ocurrencia de golpes de estado y la variación en los niveles de protección de los derechos de integridad física en función del uso enjuiciamientos, amnistías y comisiones de la verdad en los años posteriores a la primera transición democrática de cada país.
+
+En el presente capítulo, se describen los datos, variables y técnicas de análisis empleadas en el desarrollo de esta tesis de magister. En cada punto, se argumentan los criterios de selección de casos, indicadores y procedimientos estadísticos en función de los desafíos metodológicos planteados en el capítulo de problematización (capítulo II), y la definición de conceptos, teorías e hipótesis de investigación (capítulo III).
+
+## 1 Datos
+
+### 1.1 Criterios de selección de casos y limitación temporalidad del estudio
+
+Cómo se señaló en la propuesta de investigación de la tesis (Capítulo II. 3), la selección de los casos de estudio se basó en dos criterios teóricos y metodológicos:
+
+**a)	Similitud de pasados autoritarios recientes:**
+
+Durante las décadas de 1970 y 1980, diecisiete de los treinta y tres países de América Latina y el Caribe estuvieron bajo dictaduras civiles y militares que sistemáticamente violaron los derechos humanos, utilizando métodos como la prisión política, la tortura, el asesinato y la desaparición forzada para controlar a la población. La mayoría de los regímenes autoritarios latinoamericanos se caracterizaron por articular discurso político centrado en la lucha contra la subversión y el comunismo internacional. Estas modalidades y discursos de la represión son cualitativamente distintos a los que operan en otros episodios de violencia estatal masiva y unilateral, como los genocidios en Ruanda y en Camboya, por ejemplo, que buscaron eliminar por completo a un sector de la población definido por sus características étnicas o religiosas (Guerrero, 2023). Por tanto, al reducir los casos de estudio a la región de América Latina y el Caribe se obtiene una muestra de países con pasados autoritarios relativamente similares.
+
+**b)	Transiciones democráticas:**
+
+La investigación se enfoca específicamente en los países que experimentaron al menos una transición democrática entre 1970 y 2010. Se excluyen casos como el de Colombia, que, aunque no tuvieron una dictadura tradicional, enfrentaron conflictos armados internos prolongados con grupos guerrilleros, paramilitares y narcotraficantes durante todo el período de estudio. La exclusión de este tipo de casos se basa en la importancia de distinguir entre las transiciones democráticas, que son emblemáticas en el contexto de la justicia transicional, y los casos de países en conflicto interno, que deben lidiar con crímenes de guerra y el proceso de reconstrucción posterior.
+
+En base a los criterios mencionados, se seleccionaron todos aquellos países de América Latina y el Caribe que experimentaron al menos una transición democrática entre 1970 y 2010: 17 en total. La tabla 1 detalla el listado de países incorporados en la muestra.
+
+```{r Tabla 1}
+
+datos_tesis %>%
+  group_by(pais, codigo_transicion) %>%
+  summarise(anno_transicion = first(as.character(anno))) %>%
+  ungroup() %>%
+  select(!codigo_transicion) %>%
+  flextable() %>%
+  merge_v(j = "pais") %>%
+  set_header_labels(
+    pais = "País",
+  anno_transicion = "Año de transición") %>%
+  autofit() %>%
+  set_caption(caption = "Tabla 1. Listado de países de América Latina y el Caribe que experimentaron una o más transiciones democráticas entre los años 1970 y 2010")
+
+```
+>>>> Fuente: Elaboración propia en base a datos del TJRC
+
+La determinación del periodo de estudio se realizó en base a la información disponible en el Proyecto TJRC (Transitional Justice Research Collaborative) que, como se explicó en la propuesta de investigación (Capítulo II.3), contiene datos cuantitativos sobre el uso de enjuiciamientos, amnistías y comisiones de la verdad en los procesos de transición experimentados en los países de América Latina y el Caribe y de otras regiones del mundo entre los años 1970 y 2010.
+
+Es importante tener en cuenta que esta muestra específica de países y años posteriores a la transición tiene limitaciones importantes. En primer lugar, la muestra fue construida con de evaluar la constribución de los mecanismos de justicia transicional a la protección de la democracia y los derechos humanos humanos dentro de un contexto particular de países de América Latina y el Caribe con democracias post autoritarias, lo hace que los resultados del estudio de tesis no sean generalizables a otros contextos regionales o a transiciones de guerras civiles en países democráticos sin pasados autoritarios recientes. En segundo lugar, la escaza información estadística disponible sobre el uso de enjuiciamientos, amnistías y comisiones en los países que han experimentado conflictos o transiciones democráticas hace que el periodo de estudio se restrinja artificialmente a la duración de los regímenes post autoritarios iniciados entre 1970 y 2010, por lo que no es posible evaluar el impacto de los mecanismos de justicia transicional en los años posteriores a este periodo. 
+
+### 1.3 Estructura y organizaciones de la base de datos
+
+Considerando lo anterior, se elaboró una base de datos de series temporales transversales (TSCS, por sus siglas en inglés) que sistematiza información sobre enjuiciamientos, amnistías y comisiones de la verdad en los 17 países de América Latina y el Caribe que componen la muestra de estudio. En las bases de datos TSCS, cada fila (n) está asociada con una unidad específica (N) en un momento particular, y cada una de estas unidades se observa en repetidas ocasiones a lo largo de múltiples períodos de tiempo (T). En este caso, la muestra tienen un total de 456 observaciones (n) anidadas en 17 países (N) con diferentes años de transición (T = 14 - 37).
+
+La unidad de análisis de la base de datos construida para esta tesis es el año de transición por país. Por tanto, la base de datos almacena y sistematiza información de los países en los años posteriores a la recuperación de la democracia. En los países con procesos de transición democrática interrumpidos por golpes de estado y dictadura civico-militares, como es el de caso de Argentina entre los años 1973 - 1976 y 1983 en adelante, se registra en la base de datos toda la información de los años posteriores a la primera recuperación de la democracia, incluyendo los años en los que esuvo ausente el régimen democrático. 
+
+La figura 1 muestra los países y los años de transición incorporados en la base de datos.
+
+```{r Figura 1, fig.cap= "Figura 1. Años de transición democrática acumulados en los países de América Latina y el Caribe entre 1970 y 2010 (N = 17, T = 14-37)",fig.pos= "center"}
+world <- ne_countries(scale = "medium", returnclass = "sf")
+
+world <- world %>% 
+  select(iso_a3, geometry)
+
+world$codigo_pais <- countrycode(world$iso_a3, "iso3c", "cown")
+
+paises <- datos_tesis %>%
+  mutate(codigo_pais = as.double(codigo_pais)) %>%
+  group_by(codigo_pais, pais) %>%
+  summarise(n = n())
+
+world %>%
+  left_join(paises) %>%
+  ggplot() +
+  geom_sf(aes(fill = n)) +
+  scale_fill_gradient("Total de casos", high = "red", low = "yellow") +
+  labs(caption = "Nota: Los países en gris no registran transiciones democráticas en el periodo") +
+  theme_void() +
+  theme(legend.position = "bottom",
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        legend.title.align=0.5) +
+  guides(fill = guide_colorbar(title.position = "top",
+                               title = "Años de transición",
+                               barwidth = 15, 
+                               barheight = 0.5)) +
+  coord_sf(xlim= c(-140,-20),
+           ylim= c(-60,30), expand = FALSE)
+
+```
+
+## 2 Variables
+
+### 2.1 Variables dependientes
+
+#### 2.1.1 Golpes de estado
+
+En el diseño de esta tesis de magister, se propone que los golpes de estado sean considerados como variable dependiente para evaluar la contribución de la justicia transicional a la democracia. La elección de esta variable se basa en la teoría de que los mecanismos de justicia transicional, como los enjuiciamientos penales por violaciones de derechos humanos, pueden activar a actores que podrían oponerse e interrumpir por la fuerza el  proceso de transición democrática [@Snyder2003]. En otras palabras, la implementación de estos mecanismos podría aumentar el riesgo de golpes de estado.
+
+Para analizar la ocurrencia de golpes de estado en los años de transición por país se utilizaron los datos del proyecto *Military coups d état* (CAM por sus siglas en inglés), que registra un total de 477 golpes de estado ocurridos en 99 países entre los años 1950 y 2018 [@Albrecht2018].
+
+En concordancia con el marco conceptual (Capítulo I1), el proyecto CAM define los golpes de estado como “intentos ilegales y abiertos por parte de oficiales militares para derrocar [por las armas] a los ejecutivos en funciones” (Powell and Thyne 2011, p. 252). Y dentro de esa definición, distingue entre los golpes perpetrados por los oficiales de elite o los oficiales de combate.
+
+Según el CAM, los golpes de oficiales de élite son llevados a cabo por destacados oficiales militares y funcionarios gubernamentales provenientes del ejército, incluidos ministros de defensa, jefes de estado mayor generales, jefes de estado mayor y/o líderes de ramas de las fuerzas armadas o unidades militares funcionales (ejército, fuerza aérea, marina, guardia republicana), así como miembros de juntas y consejos militares gobernantes [@Albrecht2018]. Todos los demás golpes constituyen golpes de oficiales de combate.
+
+Metodológicamente, el CAM se basa en los esfuerzos anteriores desarrollados por el equipo de investigación del proyecto *PT11* (Powel & Thyne, 2011) y de otros esfuerzos académicos de recopilación masiva de datos que sistematizaron la información disponible en prensa sobre los episodios de golpes de estado ocurridos en cada región entre los años 1950 y 2017 [@Albrecht2018]. Su objetivo es procesar la información de las bases de datos de estos proyectos académicos para generar mayor conocimiento sobre el fenómeno de estudio, analizando variables que registran la ocurrencia y el resultado de los golpes de estado, y caracterizan la agencia golpista a través de indicadores que describen la identidad de los conspiradores (como sus orientaciones ideológicas, origen étnico y afiliación a la rama militar) y la mecánica del complot llevado a cabo contra el ejecutivo en funciones (como las trayectorias de los gobernantes después de los intentos de golpe exitosos, y el nivel de violencia empleado en la acción de derrocamiento) (Ídem.).
+
+En la base de datos de la tesis se incorporaron tres indicadores del CAM. El primero, es un indicador numérico que da cuenta, dentro de cada país, del registro anual de golpes de estado. Esta variable considera todos los intentos de golpes de estado perpetrados por miembros de las fuerzas armadas. El segundo indicador, es una variable dicotómica que adquiere el valor 1 cuando un golpe de estado logra derrocar al ejecutivo en funciones, y el valor 0 cuanto no lo logra. Y el tercer indicador es una variable dicotómica que adquiere el valor 1 cuando los golpes son dirigidos por oficiales de élite y el valor 0 cuando los golpes son liderados por oficiales de combate.
+
+Además, utilizando la variable golpes (intentos de golpe de estado), se construyó una nueva variable dicotómica que adquiere el valor 1 cuando ocurre al menos un golpe de estado en un determinado año-país y el valor 0 cuando no ocurre. Esta nueva variable es utilizada para estimar la probabilidad de ocurrencia de un evento golpista en función del uso de enjuiciamientos, amnistías y comisiones de la verdad en los países de América Latina y el Caribe con democracias post autoritarias.
+
+La Tabla 2 describe las variables CAM utilizadas para analizar la ocurrencia de golpes de estado en las democracias post autoritarias de América Latina y el Caribe.
+
+```{r Tabla 2}
+
+tabla_1 <- vtable::sumtable(datos_tesis %>%
+                              select(contains("golpes")), labels = T, out = 'return')
+
+tabla_1 <- tabla_1 %>%
+  select(Variable, n = N, Media = Mean, Des.Est = `Std. Dev.`, Min, Max)
+
+tabla_1 %>%
+  flextable() %>%
+  autofit() %>%
+  set_caption(caption = "Tabla 2. Estadísticos descriptivos de los indicadores de golpes de estado")
+```
+>> Elaboración propia en base a los datos del CAM
+
+Cabe destacar, que las variables e indicadores CAM utilizados en este estudio muestran que 11 de los 17 países de América Latina y el Caribe con regímenes post autoritarios experimentaron al menos un episodio de golpe de estado en los años posteriores a la primera transición democrática. En total, se registran 25 golpes de estado, de los cuales 11 tuvieron éxito (es decir, derrocaron al ejecutivo en funciones) y 10 fueron dirigidos por oficiales de elite de las Fuerzas Armadas (ver Tabla 3).
+
+```{r Tabla 3}
+datos_tesis %>%
+  group_by(pais) %>%
+  summarise(golpes = sum(golpes),
+            golpes_consumados = sum(golpes_consumados),
+            golpes_elites = sum(golpes_elites)) %>%
+  janitor::adorn_totals("row") %>%
+  flextable() %>%
+  autofit() %>%
+  set_header_labels(pais = "País",
+                               golpes = "Golpes", 
+                               golpes_consumados = "Golpes consumados",
+                               golpes_elites= "Golpes de oficiales de elites") %>%
+  set_caption(caption = "Tabla 3. Número de golpes de estado perpetrados en los países de América Latina y el Caribe entre 1970 y 2010")
+```
+>> Elaboración propia en base a datos del CAM
+
+Además, los datos señalan que la mayoría de los golpes de estado ocurrieron durante los primeros años posteriores a la transición democrática, cuando muchos de los potenciales saboteadores del proceso guardaban importantes cuotas de poder institucional (Ver figura 2).
+
+```{r Figura 2, fig.cap= "Figura 2. Número de golpes de estado perpetrados en los países de América Latina en los años posteriores a la primera transición democrática (1970 - 2010)", fig.pos= "center"}
+
+datos_tesis %>%
+  group_by(annos_transicion) %>%
+  summarise(golpes = sum(golpes)) %>%
+  ggplot(aes(x = annos_transicion, y = golpes)) +
+  geom_line() +
+  labs(y = "Nª golpes de estado",
+       x = "Nº de años transcurridos desde la primera transición democrática") +
+  theme_bw() +
+  theme(text = element_text(size = 10, family = "Times"))
+```
+
+#### 1.2 Protección de los derechos de integridad física
+
+Hasta ahora, la investigación cuantitativa sobre justicia transicional utiliza preferentemente tres indicadores de protección de los derechos humanos: el Índice de Derechos de Integridad Física de Cingranelli y Richards -CIRI- [-@Cingranelli2010], la Escala de Terror Político -PTS- (Political Terror Scale) del Departamento de Ciencia Política de la Universidad de Carolina del Norte (EE.UU) [@Wood2010], y el Índice de Integridad Física Latente de Schnakenberg y Fariss (2014).
+
+El índice de Derechos de Integridad Física de Cingranelli y Richards (CIRI) [-@Cingranelli2010] es un indicador estadístico que mide el nivel de respeto de los gobiernos por los derechos de integridad física en 202 países, entre los años 1981 y 2011. La unidad de análisis de CIRI es el "año-país" y su principal fuente de información son los informes de países sobre prácticas de derechos humanos del Departamento de Estado de los Estados Unidos y el informe anual de Amnistía Internacional. Su metodología se basa en la codificación separada de los casos de tortura, desaparición forzada, asesinatos y prisión política y su ponderación en escalas que van desde 0 a 2 puntos, donde 0 (cero) indica la comisión sistemática o generalizada de estos delitos, 1 indica la comisión ocasional y 2 indica la no ocurrencia. A partir de este registro, se construye un índice sumatorio que mide en una escala de ocho puntos el nivel de respeto por los derechos de integridad física, donde los puntajes más altos dan cuenta de un mayor nivel de protección (ver fórmula).
+
+$$
+CIRI = \sum_{i=0}^{n = 2} Xi\ = X_1{Prisión} + X_2{Tortura} + X_3{Asesinatos} + X_4{Desapariciones}
+$$
+
+La Escala de Terror Político del Departamento de Ciencias Políticas de la Universidad de Carolina del Norte (USA) [@Wood2010] es un indicador estadístico que mide el nivel de violencia estatal de 169 países, entre los años 1976 y 2019, a través del registro anual de violaciones a los derechos humanos de integridad física que hacen 3 organizaciones internacionales especializadas en la materia: Amnistía Internacional, Human Rights Watch y el Departamento de Estado de los Estados Unidos. Su metodología consiste en asignar duplas de investigadores especializados, que se encargan de codificar todas las violaciones al derecho humano a la integridad física que cometen los agentes estatales en cada país, y que están presentes en el contenido de los escritos publicados año a año por las organizaciones internacionales (Wood & Gibney, 2010). Luego, se analiza el volumen y el tipo de las violaciones a los derechos humanos (tortura, desaparición forzada, asesinatos políticos, etc.) que fueron codificadas en los informes y se construye un índice cualitativo que asigna un puntaje a cada país, en una escala de 5 niveles donde 1 es el nivel de terror político más bajo y 5 es el más alto (ver Tabla 4). De esta manera, se construyen tres indicadores de violencia estatal (o terror político): uno para cada organización.
+
+```{r Tabla 4}
+
+Nivel <- c(1:5)
+
+Detalle <- c("El país tiene un estado de derecho seguro. Las personas no son encarceladas por sus ideas políticas, y la tortura o la aplicación de tratos crueles es rara o excepcional. Los asesinatos políticos son extremadamente raros",
+             "Hay una cantidad limitada de prisión por actividad política no violenta. En ciertas ocasiones, algunas personas se ven afectadas por la violencia estatal, aunque la tortura y las palizas son excepcionales, y el asesinato político es muy raro o inexistente",
+             "Hay un encarcelamiento político extenso en algunos sectores políticos o sociales, o hoy una historia reciente de tal encarcelamiento. La ejecución u otros asesinatos políticos son escasos, aunque la brutalidad policial o militar suele ser común. Las autoridades adoptan un discurso que acepta la detención ilimitada, con o sin juicio, por puntos de vista políticos",
+             "Las violaciones de los derechos civiles y políticos se han ampliado a un número importante de personas. Asesinatos, desapariciones y/o torturas son parte de la vida cotidiana. A pesar de su carácter generalizado, la violencia estatal afecta mayoritariamente a aquellas personas que se interesan por la política y/o participan en movimientos que cuestionan el orden establecido",
+             "Las violaciones a los derechos humanos descritas en el nivel 4 se extienden a toda la población o a un sector completo de ella. Las autoridades políticas de estos países no ponen límites al uso de medios ilegales por parte de agentes del Estado, porque algunas vulneraciones contribuyen a alcanzar sus objetivos personales o ideológicos")
+
+tabla_4 <- cbind(Nivel, Detalle) %>%
+  as_tibble() %>%
+  flextable() %>%
+  set_header_labels(
+  Nivel = "PTS",
+  Detalle = "Situación de los derechos humanos"
+) %>%
+  align(align = "center", part = "all") %>%
+  set_caption(caption = "Tabla 4. Niveles de la Escala de Terror Político (PTS)")
+
+FitFlextableToPage <- function(ft, pgwidth = 6){
+
+  ft_out <- ft %>% autofit(part = c("header", "body"))
+
+  ft_out <- width(ft_out, width = dim(ft_out)$widths*pgwidth /(flextable_dim(ft_out)$widths))
+  return(ft_out)
+}
+
+FitFlextableToPage(tabla_4)
+
+```
+Fuente: @Haschke2019, p. 13
+
+El Índice de Integridad Física Latente de Schnakenberg y Fariss es un indicador robusto de protección de los derechos humanos que cubre un total de 198 países, entre los años 1946 y 2019 [@Schnakenberg2013]. Fue construido utilizando dos tipos de fuentes de información estadística sobre protección de los derechos humanos en los países: las fuentes basadas en el cumplimiento de estandares que se reportan a través de informes emitidos por organismos internacionales de derechos humanos, como CIRI y PTS, y las fuentes basadas en el registro de eventos represivos, como genocidios y asesinatos masivos [@Harff2003; @Rummel2016], o ataques armados contra la población civil [@Eck2016], que han sido sistematizados por otros proyectos académicos.
+
+El puntaje del Índice de Protección de Integridad Física Latente es calculado a través de un modelo de teoría dinámica de respuesta al ítem ordinal que reduce el sesgo de medición que generan los cambios en el nivel de información disponible en cada fuente de datos y en los estándares internacionales de derechos humanos a lo largo del tiempo [@Fariss2014; @Schnakenberg2013; @Clark2013]. El cálculo del puntaje consiste en crear $m$ conjuntos de datos utilizando diferentes dibujos de la distribución posterior de la variable latente, para luego combinarlas a través de la fórmula de Rubin, donde la estimación puntual para cada parámetro es la media de las estimaciones $m$, y el error estándar es:
+
+$$
+\sqrt{\frac{1}{m} \sum_{m}^{k} \ S_{k}^{2} + (1 + \frac{1}{m})\sigma _{\beta}^{2}}
+$$
+
+donde $S_{k}^{2}$ es el error estándar del conjunto de datos $k$, y $\sigma _{\beta}^{2}$ es la varianza en los coeficientes de regresión entre conjuntos de datos. En palabras, el error estándar de $\beta$ es el error estándar promedio de cada modelo, más la varianza en los coeficientes de regresión multiplicada por un factor de corrección para cada $m$ [@Schnakenberg2013, p. 22].
+
+La Figura 3 muestra el historiograma de los puntajes latentes de protección de los derechos humanos de integridad física en los países de América Latina con regímenes post autoritarios, estimados a través del modelo de teoría dinámica de respuesta al ítem de @Schnakenberg2013. En ella, se puede observar que los puntajes del índice están centrados en su media y se distribuyen en una escala de intervalo similar al de la curva normal, que va desde el nivel más bajo de protección (`r round(min(datos_tesis$proteccion_ddhh, na.rm = T), 1)`) hasta el más alto (`r round(max(datos_tesis$proteccion_ddhh, na.rm = T), 1)`).
+
+```{r Figura 3, fig.cap= "Figura 3. Historiograma de puntajes del Indice de Protección de Integridad Física Latente", fig.pos= "center"}
+datos_tesis %>%
+  ggplot(aes(x = proteccion_ddhh, fill = "blue")) +
+  geom_histogram(bins = 8, color = "black") +
+  labs(x = "Protección de la integridad física",
+       y = "Frecuencia") +
+  theme_bw() +
+  theme(legend.position = "none",
+        text = element_text(size = 10, family = "Times"))
+
+```
+
+Para analizar los niveles de protección de los derechos humanos observados en los años de transición por país se utilizaron los datos del Índice de Integridad Física Latente de Schnakenberg y Fariss. La elección de este indicador se fundamenta en tres grandes razones. Primero, porque cubre un periodo temporal que es mayor que el de CIRI y PTS. Segundo, porque el puntaje estimado de integridad física latente proviene de un modelo estadístico que integra diferentes fuentes de información disponible, entre las que se incluye CIRI y PTS. Y tercero, porque dicho modelo estadístico incorpora el historial represivo de los países y los cambios en los estándares de derechos humanos a lo largo del tiempo.
+
+De acuerdo con los datos del Integridad Física Latente, la mayoría de los países de América Latina y el Caribe mejoraron signficativamente sus niveles de protección de los derecho humanos durante los años posteriores a la primera transición democrática (ver Figura 4). Además, los datos muestran que los países que a travesaron por periodos de conflicto armado interno o vivieron episodios de golpes de estado que interrumpieron los procesos de transición democrática, como es el caso de Argentina, El Salvador y Perú, experimentaron un deterioro significativo en los niveles de protección de los derechos humanos.
+
+```{r Figura 4, fig.cap= "Figura 4. Variación histórica de los puntajes del Indice de Protección de Integridad Física Latente en los regímenes post autoritarios de América Latina y el Caribe (1970 - 2010)", fig.pos= "center"}
+
+datos_tesis %>%
+  ggplot(aes(x = anno,
+             y = proteccion_ddhh)) +
+  geom_line() +
+  facet_wrap(~pais) +
+  labs(y = "Puntaje Índice de Integridad Física Latente",
+       x = "Año") +
+  theme_bw() +
+  theme(text = element_text(size = 10, family = "Times"))
+
+```
+
+### 2.2 Variables independientes
+
+Para medir el uso de los mecanismos de justicia transicional se utilizaron los indicadores del Transitional Justice Research Collaborative (TJRC): un proyecto académico que, se basándose en las definiciones del derecho internacional, registró el número de enjuiciamientos, sentencias, amnistías y comisiones de la verdad que se celebraron entre años 1970 y 2010 para investigar los delitos perpetrados por agentes estatales o por privados que operaron con su aquiescencia durante el periodo autoritario anterior.
+
+A diferencia de otras fuentes de información estadística, los indicadores del TJRC permiten medir la frecuencia y la calidad de los mecanismos de justicia transicional [@Dancy2019; @Dancy2022]. En lugar de simplemente clasificar si un mecanismo está presente o ausente, estos indicadores permiten cuantificar cuántos enjuiciamientos se llevaron a cabo, cuántas sentencias con veredictos de culpabilidad se emitieron, cuántas amnistías se decretaron y cuántas comisiones de la verdad operaron en un determinado año-país. Además, el TJRC incorpora indicadores dicotómicos desagregados que registran la publicación de informes de las comisiones de la verdad y la formulación de recomendaciones de reforma y de enjuiciamiento de criminales de lesa humanidad.
+
+En concreto, se incorporó a la base de datos de la tesis los indicadores del TJRC que dan cuenta del número de juicios y sentencias condenatorias por violaciones de derechos humanos acumuladas en cada transición a lo largo de los años, y también los indicadores cuantitativos y cualitativos que miden la ocurrencia acumulada de las comisiones de la verdad en las transiciones y la publicación de informes con recomendaciones de reforma o enjuiciamiento. Además, se incorporó un indicador de amnistías que mide la cantidad de leyes de amnistías acumuladas en cada transición, incluyendo las leyes de autoamnistía aprobadas por líderes autocráticos antes del inicio de la democratización, como el proceso de Chile de 1979. La Tabla 5 describe las variables independientes que operan como predictores en el estudio de esta tesis.
+
+```{r Tabla 5}
+datos_tesis %>%
+  select(enjuiciamientos, enjuiciamientos_acum, amnistias, amnistias_acum, comisiones, comisiones_acum, comisiones_enjuiciamientos_dummy, comisiones_reforma_dummy) %>%
+  vtable::sumtable(labels = T, out = 'return') %>%
+  select(Variable, n = N, Media = Mean, Des.Est = `Std. Dev.`, Min, Max) %>%
+  flextable() %>%
+  autofit() %>%
+  set_caption(caption = "Tabla 5. Estadísticos descriptivos de las variables predictoras")
+```
+>> Fuente: Elabotación propia en base a datos del TJRC
+
+Según los datos del TJRC, de los 17 países de América Latina y el Caribe que experimetaron transiciones democráticas, 15 persiguieron al menos un enjuiciamiento, 11 mantuvieron vigentes o aprobaron al menos una ley de amnistía, y 12 implementaron al menos una comisión de la verdad; 11 países emplearon alguna combinación de juicios y amnistías, o juicios y comisiones de la verdad, y 8 hicieron uso de estos tres mecanismos de manera combinada (ver Figura 5). Cabe destacar, que en toda la muestra no hay ningún país que haya dictado unicamente leyes de amnitías para enfrentar las consecuencias de sus pasados autoritarios recientes en materia de derechos humanos.
+
+```{r Figura 5, fig.cap= "Figura 5. Combinación de mecanismos de justicia transicional en los países de América Latina y el Caribe con regímenes post autoritarios (1970-2010)", fig.pos= "center", fig.height=4, fig.width=6}
+
+figura_5 <- list(
+  "Enjuiciamientos" = unique(datos_tesis$codigo_pais[datos_tesis$enjuiciamientos_acum > 0]),
+  "Amnistías" = unique(datos_tesis$codigo_pais[datos_tesis$amnistias_dummy > 0]),
+  "Comisiones de la Verdad" = unique(datos_tesis$codigo_pais[datos_tesis$comisiones_acum > 0])
+  )
+
+ggvenn::ggvenn(figura_5,
+               show_percentage = FALSE,
+               fill_color = c("red", "yellow", "orange"),
+               set_name_size = 4,
+               text_size = 3)
+
+
+
+```
+
+Al analizar longitudinalmente la evidencia estadística acumulada por el TJRC, se puede ver que, entre 1970 y 2010, se generó una *cascada de justicia* en los países de América Latina y el Caribe con regímenes posautoritarios [@Sikkink2013], debido al explosivo aumento en el número de enjuiciamientos y de condenas por violaciones de derechos humanos que ha disminuido significativamente los niveles de impunidad [@Lessa2014]. Cómo muestra la Figura 6, durante el periodo de estudio, las  amnistías  se  aprobaron  regularmente  en los primeros años de transición, antes o después  una  pequeña de  cantidad  de  juicios,  pero  los  enjuiciamientos  siguieron  ocurriendo en la mayoría de los países y fueron aumentando en volumen a medida que transcurrieron los años de transición.
+
+```{r Figura 6, fig.cap= "Figura 6. Enjuiciamientos, setencias y amnistías por violaciones a los derechos humanos acumuladas en los países de América Latina y el Caribe entre 1970 y 2010", fig.pos= "center"}
+
+datos_tesis %>%
+  group_by(anno) %>%
+  summarize(juicios = sum(enjuiciamientos),
+            sentencias = sum(sentencias),
+            amnistias = sum(amnistias)) %>%
+  mutate(sumatoria_juicios = cumsum(juicios),
+         sumatoria_amnistias = cumsum(amnistias)) %>%
+  ggplot(aes(x = anno)) +
+  geom_line(aes(y = sumatoria_amnistias, colour = "Amnistías"), linetype = 2) +
+  geom_line(aes(y = sumatoria_juicios, colour = "Juicios"), linetype = 1) +
+  labs(x = "Año",
+       y = "Frecuencia acumulada") +
+  scale_colour_manual(values = c("orange", "red")) +
+  theme_bw() +
+  theme(legend.position = "bottom",
+        legend.title = element_blank())
+```
+
+En cuanto a las comisiones de la verdad, los datos del TJRC señalan que, entre 1970 y 2010, se celebró un total de 17 comisiones de la verdad en 12 países de América Latina. Al comparar el contenido de los informes emitidos por esas comisiones de la verdad, se puede ver que el 58,82% de ellas recomendó el enjuiciamiento de criminales de lesa humanidad y el 47,06% recomendó la implementación de reformas institucionales (ver Tabla 6).
+
+```{r Tabla 6}
+datos_tesis %>%
+  filter(comisiones > 0) %>%
+  group_by(pais, comisiones_acum) %>%
+  summarise(anno = first(as.character(anno)),
+            com_enjuiciamiento = last(comisiones_enjuiciamientos_dummy),
+            com_reforma = last(comisiones_reforma_dummy)) %>%
+  ungroup() %>%
+  select(!comisiones_acum) %>%
+  flextable() %>%
+  merge_v(j = "pais") %>%
+  set_header_labels(pais = "País",
+                    anno = "Año",
+                    com_enjuiciamiento = "Recomendación de enjuiciamientos",
+                    com_reforma = "Recomendación de reformas") %>%
+  set_caption(caption = "Tabla 6. Comisiones de la verdad celebradas en los países de América Latina y el Caribe con regímenes post autoritarios entre los años 1970 y 2010")
+```
+>> Fuente: Elaboración propia en base a los datos del TJRC
+
+### 2.3 Variables de control
+
+Cómo variables de control se incorporaron diferentes tipos de indicadores. En primer lugar, se incorporaron indicadores de la base de datos del Banco Mundial relacionados con la estructura de la población, e indicadores sobre la existencia de conflictos violentos del conjunto de datos de conflictos armados UCDP/PRIO de la Universidad de Uppsala. En cuanto a la estructura de la población, el logaritmo natural del Producto Interno Bruto (PIB) per cápita (en dólares estadounidenses constantes) controla el nivel de riqueza nacional de un país, porque a menudo se encuentra que la democracia y la protección de los derechos humanos están fuertemente correlacionadas con la capacidad económica de las naciones [@Keith2012]. El control por tamaño de la población da cuenta de los posibles desafíos que plantean los países más grandes a la gobernabilidad democrática y la mayor oportunidad que tienen los estados de violar los derechos humanos en localidades densamente pobladas [@Davenport2004a]. Por su parte, el indicador que da cuenta de la existencia de conflictos armados internos, controla las amenazas a la seguridad nacional que pueden socavar tanto las instituciones democráticas como la protección de los derechos humanos. Esta variable distingue entre el conflicto de nivel inferior, con al menos 25 muertes relacionadas con batallas, y la guerra, que tiene al menos 1000 muertes relacionadas con batallas por cada año [@Pettersson2020]. 
+
+En segundo lugar, se incorporaron variables de control vinculadas a los niveles de democracia y de control civil sobre el ejecutivo. En particular, se incorporó el indicador Polity II que controla los niveles de democracia de los países en transición. Polity II codifica rangos institucionales del ejercicio de la autoridad, incluidos los procedimientos a través de los cuales los ciudadanos eligen a sus líderes y aquellas instituciones que restringen el poder de los gobernades. En cuarto lugar, se incluyó un indicador que da cuenta del tipo de transición democrática. Este indicador toma el valor 0 cuando se trata de una transición pactada con las fuerzas autocráticas y el valor 1 cuando se trata de una transición democrática que inicia con la derrota o el colapso del régimen democrático saliente. La tabla 7, resume las estadísticas descriptivas de las variables de control utilizadas en el análisis multivariado de la protección de los derechos humanos.
+
+```{r Tabla 7}
+datos_tesis %>%
+  select(pib, poblacion, polity2, conflicto, intependencia_pjud) %>%
+  vtable::sumtable(labels = T, out = 'return') %>%
+  select(Variable, n = N, Media = Mean, Des.Est = `Std. Dev.`, Min, Max) %>%
+  flextable() %>%
+  autofit() %>%
+  set_caption(caption = "Tabla 7. Estadísticos descriptivos de las variables de control")
+```
+
+## 3 Técnicas de análisis de datos
+
+### 3.1 Regresiones logísticas y lineales en datos TSCS
+
+Siguiendo las recomendaciones de @Beck2011, se optó por analizar la contribución de los mecanismos de justicia transicional a la democracia y la protección de los derechos humanos a través de modelos de regresión logística y lineal para datos TSCS. Los modelos de regresión logística estiman la probabilidad de ocurrencia de intentos de golpes de estado en cada país y año de transición, en función del uso de uno o más mecanismos de justicia transicional. Y los modelos de regresión lineal estiman el puntaje latente de protección de los derechos de integridad física para cada país y año de transición, en función del uso individual y combinado de enjuiciamientos, amnistías y comisiones de la verdad.
+
+La fórmula general que describe los modelos de regresión logística utilizados en la tesis es:
+
+\[ \log \left( \frac{p_{it}}{1 - p_{it}} \right) = \alpha_i + \beta_0 + \beta_1X_{1it} + \beta_2X_{2it} + \ldots + \beta_kX_{kit} + \epsilon_{it} \]
+
+donde \(p_{it}\) representa la probabilidad de un intento de golpe de estado en un determinado país \(i\) y año de transición \(t\), \( \alpha_i \) es el efecto fijo específico del país \( i \), \(X_{1it-1}, X_{2it-1}, \ldots, X_{kit-1}\) son los valores rezagados de las variables independientes (enjuiciamientos, sentencias, amnistías, comisiones de la verdad y otros indicadores de control estadístico) en el año anterior \(t-1\) y \(\epsilon_{it}\) es el error aleatorio que captura la probabilidad no explicada.
+
+Y la fórmula general que describe los modelos de regresión lineal es:
+
+\[ Y_{it} = \alpha_i + \beta_0 + \beta_1X_{1it-1} + \beta_2X_{2it-1} + \ldots + \beta_kX_{kit-1} + \epsilon_{it} \]
+
+donde \(Y_{it}\) representa la protección de los derechos de integridad física en el país \(i\) en el período de tiempo \(t\), \( \alpha_i \) es el efecto fijo específico del país \( i \), \(X_{1it-1}, X_{2it-1}, \ldots, X_{kit-1}\) son las variables independientes de interés y control estadístico en el periodo \(t-1\), y \(\epsilon_{it}\) es el error aleatorio.
+
+En ambos modelos se controla y se tienen en cuenta los efectos individuales específicos de cada país en el análisis de regresión. Es decir, se estiman coeficientes de regresión con un efecto fijo por país \(\alpha_i\). La inclusión de estos efectos se justifica por la necesidad de controlar factores no observables que pueden variar de un país a otro y que podrían influir en la probabilidad de ocurrencia de un intento de golpe de estado o en el nivel de protección de los derechos de integridad física. Esto permite aislar el impacto de la justicia transicional en las variables dependientes y reducir posibles sesgos en los resultados.
+
+Cada modelo incorpora también un indicador que representa la media acumulativa de la protección de los derechos de integridad física en un país específico desde 1949. Este indicador se utiliza para considerar los legados históricos de represión, ya que los países que han experimentado períodos más prolongados de violaciones de los derechos humanos tienen una mayor probabilidad de enfrentar golpes de estado y una mayor necesidad de implementar mecanismos de justicia transicional [@Dancy2022].
+
+Además, los modelos de regresión utilizan variables independientes rezagadas. Esto significa que incluyen indicadores de enjuiciamientos, amnistías, comisiones de la verdad y otras variables de control registradas en años anteriores para capturar cómo los valores pasados de esas variables pueden afectar a la variable dependiente de cada modelo en el período actual. Esto es especialmente útil cuando se trabaja con datos TSCS, ya que permite considerar la dinámica temporal y las posibles relaciones de causalidad a lo largo del tiempo [@Beck2011].
+
+El historial represivo de los países y los rezagos de las variables independientes se representan en la fórmula de regresión mediante la inclusión de indicadores de interés y de control estadístico en períodos de tiempo anteriores. Por ejemplo, para estimar el puntaje latente de protección de los derechos de integridad física para un determinado país y año de transición (\(it\)), se incluyó el número de enjuiciamientos acumulados en el período \(t-1\) y la media del historial represivo del país en el periodo \(t-1\), entre otras variables independiente rezagada. Esto permite evaluar si el aumento en el número de enjuiciamientos acumulados en el período anterior (\(t-1\)) tiene un efecto significativo en el nivel de protección de los derechos humanos registrados en el periodo actual (\(t\)), considerando el historial represivo de ese país.
+
+### 3.2 Errores estándar corregidos por paneles PCSEs
+
+Los Errores Estándar Corregidos por Paneles (PCSEs por sus siglas en inglés) desempeñan un papel crucial en el trabajo con datos TSCS y modelos de regresión lineal. Estos permiten abordar los problemas más comunes que afectan la robustez y la validez de las estimaciones, como la heteroscedasticidad y la autocorrelación [@Beck2011; @Millo2017]. 
+
+El problema de la heteroscedasticidad refiere a la variación desigual en los errores de un modelo de regresión lineal a lo largo del tiempo o entre países [@Beck2001]. En la tesis, esto podría relacionarse con la variación en la aplicación de mecanismos de justicia transicional en diferentes países y momentos del periodo post autoritario y su impacto en el nivel de protección latente de los derechos humanos. Para abordar la heteroscedasticidad observada en los modelos no corregidos (ver Anexo I: Prueba de supuestos), se utilizó la siguiente fórmula:
+
+\[ SE = \frac{SE_{OLS}}{\sqrt{H}} \]
+
+Donde \(SE\) es el error estándar corregido, \(SE_{OLS}\) es el error estándar de mínimos cuadrados ordinarios y \(H\) es el factor de corrección para heteroscedasticidad.
+
+Por su parte, los problemas de autocorrelación refieren a la correlación entre los errores del modelo en diferentes períodos [@Beck2001]. En la tesis, esto es de especial importancia porque los efectos de los mecanismos de justicia transicional en la protección latente de los derechos humanos pueden persistir a lo largo del tiempo. 
+
+Para abordar la autocorrelación observada en los modelos no corregidos (ver Anexo 1: Prueba de supuestos), se realizó un ajuste en la matriz de varianza-covarianza de los errores a lo largo del tiempo, mediante la estimación de un modelo autorregresivo (AR), que especifica que el error en un período de tiempo depende de los errores en los períodos anteriores [@Millo2017]. Este modelo AR se formuló de la siguiente manera:
+
+\[e_t = \rho e_{t-1} + u_t\]
+
+Donde \(e_t\) es el error en el período de tiempo \(t\); \(\rho\) es el coeficiente de autocorrelación, que refleja la relación entre el error en el período \(t\) y el error en el período anterior (\(t-1\)); y \(u_t\) es un término de error en el período \(t\) que no está correlacionado con el error en el período \(t-1\).
+
+El ajuste en la matriz de varianza-covarianza se basó en estimar el valor de \(\rho\) y utilizar esta estimación para calcular la covarianza entre los errores en diferentes períodos de transición. Esto permitió que los modelos reflejen la autocorrelación y ajusten adecuadamente los errores estándar para describir la verdadera estructura de correlación entre la variable dependiente y las variables independientes o predictoras.
+
+Cabe destacar, que la estimación de los modelos y de los PCSEs se realizó en RStudio, utilizando los paquetes *Tidyverse* [@Wickham2019], *plm* [@Croissant2008], *lmtest* [@Zeileis2002] y *Modelsummary* [@Arel2022]. Los códigos empleados en las operaciones de procesamiento, análisis y visualización de datos están disponibles en el Anexo 2: Códigos en RStudio.
+
+
+# RESULTADOS
+
+## 1. Justicia transicional y golpes de estado
+
+Como se señaló anteriormente, este apartado ponen a prueba las hipótesis del enfoque realista de la justicia transicional, promovido por los académicos que cuestionan la adopción de políticas de rendición de cuentas penales en derechos humanos que puedan alterar el equilibrio de los *intereses políticos dominantes* en la transición y poner en riesgo la nueva democracia [@Snyder2003; @Vinjamuri2015].
+
+La tesis central del enfoque realista es que los gobiernos post autoritarios que llevan adelante enjuiciamientos y condenas penales en contra de violadores de derechos humanos enfrentarán una mayor amenaza de golpes militares, y tendrán más partidos insatisfechos que cuestionen la legitimidad de la nueva democracia [@Snyder2003]. Por tanto, bajo este enfoque, las amnistías y la impunidad son vistas como males necesarios; es decir, como medidas responsables que buscan garantizar la estabilidad política y el estado de derecho; mientras que el enjuiciamiento penal, al afectar al personal represivo de la autocracia saliente, pone en riesgo la democracia y la protección de los derechos humanos, sobre todo durante los primeros años de transición, que es el periodo en el que los potenciales saboteadores del proceso aún guardan importantes cuotas de poder institucional (ver Capítulo 4).
+
+En cuanto a las comisiones de verdad, el enfoque realista considera que estas medidas de justicia transicional son potencialmente menos desestabilizadoras para las democracias que los enjuiciamientos penales, sobre todo si consideran el otorgamiento de amnistías para quienes contribuyan con la investigación [@Olsen2010a, 987]. Las comisiones de verdad por si solas, y las que se combinan con la dictación de leyes de amnistías, pueden generar un camino alternativo a la rendición de cuentas penales, al exponer y condenar públicamente los crímenes ocurridos en el pasado, sin poner en riesgo la estabilidad del régimen democrático post autoritario a través de la acción punitiva. En cambio, si las comisiones de verdad se combinan con una política de enjuiciamiento de criminales de lesa humanidad, podrían generar mayor riesgo de golpes de estado.
+
+Las hipótesis de este enfoque son las siguientes:
+
+- Hipótesis 1 (a): El aumento en el número de enjuiciamientos o veredictos de culpabilidad por violaciones de derechos humanos estará asociado con un
+aumento en la probabilidad de ocurrencia de golpes de estado en los años posteriores a la transición democrática.
+
+- Hipótesis 1 (b): El aumento en el número de amnistías para violadores de derechos humanos estará asociado con una disminución en la probabilidad de ocurrencia de golpes de estado en los años posteriores a la transición democrática
+
+- Hipótesis 1 (c) El aumento simultáneo de comisiones de la verdad y enjuiciamiento por violaciones de derechos humanos estará asociada con un aumento en la probabilidad de ocurrencia de golpes de estado en los años posteriores a la transición democrática
+
+- Hipótesis 1 (d): El aumento simultáneo de comisiones de verdad y amnistías para violadores de derechos humanos estará asociada con una disminución en la probabilidad de ocurrencia de golpes de estado en los años posteriores a la transición democrática
+
+La prueba de estas hipótesis consistió en la estimación de coeficientes de regresiones logística por Máxima Verosimilitud del riesgo de ocurrencia de uno o más golpes de estado en los países durante los años posteriores a la transición democrática, en función del número de enjuiciamientos, veredictos de culpabilidad, amnistías y comisiones de la verdad acumuladas en este periodo. En concreto, se estimaron cuatro modelos de regresión loística condicionados por país (ver Tabla 8). El primer modelo, examina la relación entre aumento de las amnistías, enjuiciamientos y comisiones de la verdad y el riesgo de ocurrencia de golpes de estado. El segundo modelo es exactamente igual al primero, pero considera el número de veredictos de culpabilidad en vez de los enjuiciamientos acumulados por país. El tercer modelo, estima la contribución del aumento simultáneo del número de amnistías y comisiones de verdad al riesgo de ocurrencia de golpes de estado, y el cuarto modelo estima la contribución del aumeno simultáneo de enjuiciamientos y comisiones de verdad. En todos los modelos se incluyeron variables de control para el nivel de democracia institucional (Polity IV) y la posible existencia de conflictos armados.
+
+```{r Tabla 8}
+
+m1 <- clogit(
+  golpes_dummy ~ enjuiciamientos_acum + amnistias_acum  + comisiones_acum + polity2 + conflicto + strata(codigo_pais) - 1,
+  data = datos_tesis %>%
+    mutate(
+      golpes_dummy = if_else(golpes_dummy == "Con golpe(s)", 1, 0),
+      conflicto = if_else(conflicto == "none", 0 , 1),
+      conflicto = factor(conflicto, labels = c("Sin conflicto", "Con conflicto"))
+      )
+  )
+
+m2 <- clogit(
+  golpes_dummy ~ sentencias_acum + amnistias_acum  + comisiones_acum + polity2 + conflicto + strata(codigo_pais) - 1,
+  data = datos_tesis %>%
+    mutate(
+      golpes_dummy = if_else(golpes_dummy == "Con golpe(s)", 1, 0),
+      conflicto = if_else(conflicto == "none", 0 , 1),
+      conflicto = factor(conflicto, labels = c("Sin conflicto", "Con conflicto"))
+      )
+  )
+
+
+m3 <- clogit(
+  golpes_dummy ~ enjuiciamientos_acum + amnistias_acum  * comisiones_acum + polity2 + conflicto + strata(codigo_pais) - 1,
+  data = datos_tesis %>%
+    mutate(
+      golpes_dummy = if_else(golpes_dummy == "Con golpe(s)", 1, 0),
+      conflicto = if_else(conflicto == "none", 0 , 1),
+      conflicto = factor(conflicto, labels = c("Sin conflicto", "Con conflicto"))
+      )
+  )
+
+m4 <- clogit(
+  golpes_dummy ~ amnistias_acum + enjuiciamientos_acum  * comisiones_acum + conflicto + polity2 + strata(codigo_pais) - 1,
+  data = datos_tesis %>%
+  mutate(
+    golpes_dummy = if_else(golpes_dummy == "Con golpe(s)", 1, 0),
+    conflicto = if_else(conflicto == "none", 0 , 1),
+    conflicto = factor(conflicto, labels = c("Sin conflicto", "Con conflicto"))
+    )
+  )
+
+modelsummary(list("Modelo 1" = m1,
+                  "Modelo 2" = m2,
+                  "Modelo 3" = m3,
+                  "Modelo 4" = m4),
+             title = "Tabla 8. Coeficientes de regresión logística por máxima verosimilitud del riesgo de ocurrencia de golpes de estado",
+             stars = T,
+             coef_map = list(
+               "enjuiciamientos_acum" = "Enjuiciamientos",
+               "amnistias_acum" = "Amnistías",
+               "comisiones_acum" = "CdV",
+               "polity2" = "Polity 2",
+               "conflictoCon conflicto" = "Conflicto: Armado (ref: Sin conflicto)"
+             ),
+             output = "flextable") %>%
+  autofit()
+```
+
+De acuerdo con los resultados de los modelos 1 y 2, no existe correlación entre el uso de mecanismos judiciales de rendición de cuentas y la ocurrencia de golpes de estado en las democracias post autoritarias. En el Modelo 1, el coeficiente de regresión obtenido por la variable de enjuiciamientos acumulados resultó ser negativo e insignificante en términos estadístico (β = -0.051, p = 0.626), al igual que el coeficiente de regresión de los veredictos de culpabilidad estimado en el Modelo 2 (β = -0.003, p = 0.983). Por tanto, la hipótesis 1a del enfoque realista de la justicia transicional es rechazada. No existe evidencia que sugiera que el aumento en el número de enjuiciamientos o condenas por violaciones de derechos humanos se asocie con un aumento del riego de golpes de estado en los países América Latina y el Caribe con regímenes post autoritarios.
+
+Los modelos 1 y 2 también muestran que no hay relación entre el uso de amnistías para violadores de derechos humanos y la ocurrencia de golpes de estado en las democracias post autoritarias. En ambos modelos, el coficiente regresión obtenido por esta variable es positivo e insignificante en términos estadístico. Por lo que no hay evidencia estadística que sugiera que el aumento en el número de amnistías para violadores de derechos humanos se asocie con una disminución del riesgo de golpes de estado en los años posteriores a la transición democrática. Este hallazgo rechaza la hipótesis 1b del enfoque realista.
+
+El Modelo 3 y el Modelo 4 informan que el aumento simultáneo de amnistías y comisiones de verdad, o enjuiciamientos y comisiones de la verdad, no está correlacionado con la ocurrencia de golpes de estado en las democracias post autoritarias. En el modelo 3 el riesgo de golpes de estado no disminuye significativamente cuando se combina el inicio de una nueva comisión de verdad con la dictación de nuevas leyes amnistías para violadores de derechos humanos durante un mismo año de transición (β = 0.011, p = 0.983), y en el modelo 4 esa posibilidad tampoco disminuye significativamente si se combina el inicio de una nueva comisión de verdad con el inicio de nuevos enjuiciamientos para los criminales de lesa humanidad (β = -0.185, p = 0.354). Esta evidencia rechaza las hipótesis 1 c y 1d del enfoque realista de la justicia transicional.
+
+Un hallazgo emergente en este estudio es que, en contra de los pronósticos realistas, los modelos de regresión presentan evidencia de que el aumento en el número de comisiones de verdad acumuladas en los años posteriores a la transición se asocia negativamente con el riesgo de golpes de estado. En el modelo 1, las posibilidades de que un gobierno post autoritario enfrente un intento de golpe de estado se reducen en exp(-1.596) = 0.203 odds por cada comisión de la verdad celebrada en las democracias post autoritarias, y en el modelo 2 esas posibilidades se reducen en exp(-1.734) = 0.177 odds por cada comisión celebrada. En ambos casos, el coeficiente de regresión es estadísticamente significativo, por lo que es posible afirmar que esta medida de justicia transicional, por si sola, contribuye significativamente a la prevención de los golpes de estado en las democracias post autoritarias.
+
+En término globales, los resultados obtenidos contravienen los planteamientos del enfoque realista de la justicia transicional. Los modelos de regresión revelaron que el aumento en el número de amnistías o enjuiciamientos por violaciones de derechos humanos no está asociado con un mayor riesgo de golpes. Este hallazgo deja sin sustento empírico la premisa del enfoque realista de que las acciones penales podrían desestabilizar el proceso de transición democrática al enfrentar resistencia de actores poderosos, y que, por lo mismo, las amnistías ayudarían a desactivar a los potenciales saboteadores del proceso.
+
+Los modelos de regresión también muestran que un aumento en el número de comisiones de la verdad se asocia negativamente con la probabilidad de golpes de estado en las democracias post autoritarias en América Latina y el Caribe. Este hallazgo demuestra que la contribución de las comisiones de la verdad a la prevención de golpes de estado radica en su capacidad para exponer y condenar públicamente los crímenes del pasado, lo que puede desincentivar la acción de sectores militares descontentos y fortalecer la legitimidad de la democracia emergente. Por tanto, la evidencia obtenida desafía la idea realista de que la exposición pública de las violaciones a los derechos humanos a través de comisiones de la verdad puede generar inestabilidad y aumentar el riesgo de regresiones autoritarias si no se combina con una política de perdón institucional.
+
+## 2. Justicia transicional y protección de los derechos humanos
+
+En este acápite se ponen a prueba las hipótesis de los enfoques contructivista y holista de la justicia transicional, relacionadas con la contribución teórica de los juicios, amnistías y comisiones de verdad a la protección de los derechos humanos (de integridad física) en las democracias post autoritarias.
+
+Cómo se señaló en el marco teórico (Capítulo IV), el enfoque constructivista es la corriente de pensamiento que reune a los académicos que promueven los mecanismos de judiciales y no judiciales de rendición de cuentas para enfrentar las consecuencias de las violaciones de derechos humanos ocurridas en el pasado y contribuir a la no repetición [@Dancy2019; @Dancy2022; @Kim2010; @Sikkink2013]. Este enfoque sostiene que el enjuiciamiento penal de los criminales de lesa humanidad disuade a los futuros perpetradores de cometer actos de violencia contra la población civil y, por lo tanto, mejora la protección de los derechos de integridad física en las democracias post autoritarias [@Sikkink2011]. La falta de enjuiciamientos, por el contrario, re-producre una cultura de impunidad que erosiona la democracia, el estado de derecho y fomenta la justicia por mano propia [@Sikkink2013].
+
+En cuando a los mecanismos no judiciales de rendición de cuentas, los académicos del enfoque constructivista sostienen que las comisiones de verdad también puede contribuir significativamente a la protección de los derechos humanos en las democracias post autoritarias, en la medida que aumenta los costos simbólicos para los agentes represores [@Kim2010]. En este sentido, el enfoque constructivista asume que las comisiones de verdad, al igual que los juicios, cumplen una poderosa función comunicativa en las sociedades con democracias post autoritarias, ya que pueden propagar el estigma asociado a las violaciones a los derechos humanos ocurridas en el pasado autoritario. Además, si una comisión de verdad culmina con la publicación de un informe recomendando el enjuiciamiento de los criminales de lesa humanidad o la realización de reformas institucionales para los organismos responsables de los abusos, entonces podrá reforzar la percepción de que los agentes y las instituciones estatales serán penal y políticamente responsables en el futuro, contribuyendo así a la prevención de la violencia estatal en las democracias post-autoritarias [@Dancy2022].
+
+Desde el enfoque constructivista se formularon tres hipótesis de investigación que serán testeadas en este capítulo:
+
+-	Hipótesis 2 (a): El aumento en el número de enjuiciamientos por violaciones de derechos humanos acumulados durante los años de posteriores a la transición estará asociado con un aumento en el nivel de protección de los derechos de integridad física. Este efecto será mayor si los enjuiciamientos acumulados producen veredictos de culpabilidad para los responsables de las violaciones a los derechos humanos.
+
+-	Hipótesis 2 (b): El aumento en el número de comisiones de la verdad estará celebradas en los años posteriores a transición democrática  estará asociado con un aumento en el nivel de protección de los derechos de integridad física. Este efecto será mayor si una o más comisiones de la verdad recomiendan el enjuiciamiento de criminales de lesa humanidad o la realización de reformas institucionales para la no repetición.
+
+El enfoque holista es aquel que reúne a los académicos que sostienen que la contribución de los mecanismos de justicia transicional a la protección de los derechos humanos en las democracias post autoritarias depende, principalmente, de garantizar un equilibrio adecuado entre los impulsos de rendición de cuentas y los imperativos de estabilidad política que imponen los procesos de transición democrática. Desde esta perspectiva los académicos del enfoque holista sostienen que los juicios y las amnistías funcionan en combinación y de manera complementaria para mejorar los derechos humanos [@Olsen2010a, 147–148]. La estabilidad a corto plazo que brindan las amnistías no impide necesariamente el beneficio a largo plazo de la rendición de cuentas a través de los juicios y sentencia penales. La secuencia de amnistía y los juicios a lo largo del tiempo proporciona mejoras en los derechos humanos.
+
+Bajo este enfoque, las comisiones de verdad son vistas como medidas complementarias que contribuyen al equilibrio entre el impulso de rendición de cuentas y los imperativos de estabilidad política. Esto quiere decir que, por si solas, por sí solas, las comisiones de verdad no logran el objetivo de contribuir a la no repetición, ya que no son capaces de dar acceso a la justicia, ni de garantizar la estabilidad política de los procesos de transición. Sin embargo, cuando las comisiones van acompañadas de juicios y amnistías, pueden contribuir significativamente a la rendición de cuentas y la estabilidad política que brindan esos mecanismos a través del otorgamiento de incentivos para la colaboración de agentes del régimen anterior y la publicación de informes con recomendaciones para garantizar la no repetición de las violaciones a los derechos humanos [@Olsen2010a, @Olsen2010].
+
+Desde el enfoque holista es posible formular las siguientes hipótesis:
+
+-	Hipótesis 3 (a): La combinación de juicios y amnistías durante los años posteriores a la transición democrática estará asociada con un aumento en el nivel de protección de los derechos de integridad física.
+
+-	Hipótesis 3 (b): La combinación de juicios, amnistías y comisiones de verdad durante los años posteriores a la transición democrática estará asociada con un aumento en el nivel de protección de los derechos de integridad física en los años posteriores.
+
+Para someter a prueba las hipótesis de los enfoques constructivista y holista, se calcularon estimadores de regresión por mínimos cuadrados ordinarios (OLS) del puntaje de protección latente de los derechos humanos en función del número de enjuiciamientos, amnistías y comisiones de la verdad acumuladas en los años de transición, utilizando modelos de efectos fijo por país. En todos los modelos, las covariables de interés fueron rezadas en uno o más años para eliminar la posibilidad de causalidad inversa en el cálculo e interpretación de los coeficientes. Además, los errores estándar fueron corregidos por el ajuste de paneles Beck & Katz (2011) para abordar los problemas de heteroscedasticidad y autocorrelación que generan las estimaciones por mínimos cuadrados ordinarios (OLS) cuando se modelan datos de series transversales temporales (TSCS) utilizando fórmulas de efecto fijo.
+
+La Tabla 9 informa los resultados de cuatro modelos de regresión que evalúan la contribución de los mecanismos de justicia transicional a la protección de los derechos humanos en los países de América Latina con regímenes post autoritarios. Los coeficientes positivos indican una mejora en el nivel de protección de los derechos de integridad física y los coeficientes negativos indican mayores niveles de violencia estatal o de desprotección de derechos.
+
+```{r Tabla 9}
+#### Cap 6. Justicias transicional y protección de los derechos humanos ####
+
+m3 <- plm(proteccion_ddhh ~ lag(proteccion_ddhh_acum,1)  + enjuiciamientos_acum_l1 + amnistias_acum_l1 + comisiones_acum_l1 + annos_transicion,
+          data = datos_tesis,
+          index = c("pais"),
+          model="within")
+
+m3$vcov <- vcovBK(m3, type = "HC1", cluster = "time")
+
+m4 <- plm(proteccion_ddhh ~ lag(proteccion_ddhh_acum,1)  + enjuiciamientos_acum_l1 + amnistias_acum_l1 + comisiones_acum_l1 + annos_transicion + tipo_transicion + polity2 + pib + poblacion + conflicto + intependencia_pjud,
+          data = datos_tesis,
+          index = c("pais"),
+          model="within")
+
+m4$vcov <- vcovBK(m4, type = "HC1", cluster = "time")
+
+m5 <- plm(proteccion_ddhh ~ lag(proteccion_ddhh_acum,1)  + sentencias_acum_l1 + amnistias_acum_l1 + comisiones_acum_l1 + annos_transicion + tipo_transicion + polity2 + pib + poblacion + conflicto + intependencia_pjud,
+          data = datos_tesis,
+          index = c("pais"),
+          model="within")
+
+m5$vcov <- vcovBK(m5, type = "HC1", cluster = "time")
+
+m6 <- plm(proteccion_ddhh ~ lag(proteccion_ddhh_acum,1)  + amnistias_acum_l1 + enjuiciamientos_acum_l1 + comisiones_dummy_l1 + comisiones_enjuiciamientos_dummy_l1 + comisiones_reforma_dummy_l1 + annos_transicion + tipo_transicion + polity2 + pib + poblacion + conflicto + intependencia_pjud,
+          data = datos_tesis %>%
+            mutate(comisiones_dummy_l1 = if_else(comisiones_acum_l1 > 0, 1, 0),
+                   comisiones_dummy_l1 = factor(comisiones_dummy_l1, labels = c("No", "Yes"))),
+          index = c("pais"),
+          model="within")
+
+m6$vcov <- vcovBK(m6, type = "HC1", cluster = "time")
+
+modelsummary(list("Modelo 3" = m3, "Modelo 4" = m4, "Modelo 5" = m5, "Modelo 6" = m6),
+             stars = c('*' = .1, '**' = .05, '***' = .01),
+             title = "Tabla 9. Coeficientes de regresión lineal (OLS) de la protección latente de los DDHH (Parte 1).",
+             output = "flextable",
+             coef_rename = c(
+               "lag(proteccion_ddhh_acum, 1)" = "Media de protección de DDHH t-1",
+               "enjuiciamientos_acum_l1" = "Enjuiciamientos t-1",
+               "amnistias_acum_l1" = "Amnistías t-1",
+               "comisiones_acum_l1" = "CdV t-1",
+               "annos_transicion" = "Años de transición",
+               "tipo_transicionnegotiated" = "Tipo de transición: Negociada (ref: Ruptura)",
+               "polity" = "Polity 2",
+               "pib" = "PIB pc (ln)",
+               "poblacion" = "Población (ln)",
+               "conflictoconflict" = "Conflicto: Armado (ref: Sin conflicto)",
+               "conflictowar" = "Conflicto: Guerra (ref: Sin conflicto)", 
+               "intependencia_pjud" = "Independencia PJUD",
+               "sentencias_acum_l1" = "Veredictos de culpabilidad t-1",
+               "comisiones_dummy_l1Yes" = "Al menos una CdV t-1: Sí (ref: No)",
+               "comisiones_enjuiciamientos_dummy_l1Yes" = "Recomendación de enjuiciamientos t-1: Sí (ref: No)",
+               "comisiones_reforma_dummy_l1Yes" = "Recomendación de reformas t-1: Sí (ref: No)")) %>%
+  autofit()
+
+```
+
+El modelo 3 incluye sólo los parámetros de enjuiciamientos, amnistías y comisiones de la verdad acumuladas al año t-1, junto con los años de transición y el promedio del puntaje acumulado de protección de los derechos de integridad física para controlar la dependencia temporal y la rigidez de las prácticas represivas en los países con regímenes post autoritarios. Los resultados de este modelo indican que los enjuiciamientos (β = 0.044, p < 0.001) y las comisiones de la verdad (β = 0.577, p < 0.001) se correlacionan positivamente con la protección de los derechos de integridad física de manera estadísticamente significativa, aportando evidencia favorable a las hipótesis de investigación formuladas desde el enfoque constructivista.
+
+El Modelo 4 es el mismo que el Modelo 3, pero incluye las variables de control estadístico que registran el tipo de transición, el nivel de democracia, el nivel de independencia judicial, el PIB per cápita, el tamaño de la población y la presencia de conflictos armados en los países y años de transición. Los hallazgos del modelo 4 también muestran que los coeficientes de regresión de los enjuiciamientos (β = 0.019, p < 0.001) y las comisiones de la verdad acumuladas (β = 0.417, p < 0.001) son positivos y estadísticamente significativos, aunque presentan una magnitud de efecto menor que en el modelo anterior, que es explicada por la incorporación de nuevas variables a la estimación de los puntajes latentes de protección de los derechos de integridad física. 
+
+El Modelo 5 utiliza la misma especificación de variables que el Modelo 4, pero incluye un recuento de las sentencias con veredictos de culpabilidad en lugar de los enjuiciamientos iniciados por año. De acuerdo con la lógica de la disuasión que fundamenta las hipótesis del enfoque constructivista, los veredictos de culpabilidad deberían tener un impacto de mayor magnitud en las futuras prácticas represivas, disminuyendo los niveles de violencia estatal. Los resultados obtenidos apoyan esta afirmación. El coeficiente de veredictos de culpabilidad en el Modelo 5 (β = 0.032, p < 0.001) es mayor que el coeficiente de enjuiciamientos del Modelo 4, y es estadísticamente significativo a un 99% de confianza.
+
+Según los coeficientes de regresión estimados en los modelos 4 y 5, un régimen post autoritario que ha acumulado diez procesos penales contra criminales de lesa humanidad tendrá un aumento de aproximadamente 0,19 puntos en el índice de protección latente de los derechos de integridad física, mientras que los regímenes con el mismo número de veredictos de culpabilidad tendrán un aumento de aproximado de 0,32 puntos en el índice de protección de derechos (ver figura). Este hallazgo confirma la hipótesis 2 (a) del enfoque constructivista de la justicia transicional, que plantea los enjuiciamientos de criminales de lesa humanidad contribuyen significativamente a la protección de los derechos de integridad física, sobre todo cuando generan veredictos de culpabilidad para los responsables de los abusos del pasado.
+
+```{r Figura 7, fig.cap="Figura 7. Puntajes de protección latente de los DDHH según número de enjuiciamientos o veredictos de culpabilidad acumulados en los años posteriores a la transición democrática"}
+
+figura_x <- datos_tesis %>%
+  drop_na(enjuiciamientos_acum_l1) %>%
+  mutate(estimacion_m4 = plm:::predict.plm(m4, datos_tesis)) %>%
+  drop_na(sentencias_acum_l1) %>%
+  mutate(estimacion_m5 = plm:::predict.plm(m5, datos_tesis))
+
+figura_x %>%
+  ggplot(
+    aes(x = enjuiciamientos_acum_l1, y = estimacion_m4)
+  ) +
+  geom_smooth(aes(color = "Enjuiciamientos t-1"),
+              method = "lm", se = TRUE) +
+  geom_smooth(mapping = aes(x = sentencias_acum_l1, y = estimacion_m5, color = "Sentencias t-1"),
+              method = "lm", se = TRUE) +
+  labs(x = "Nº de enjuiciamientos o veredictos acumuladas (t-1)",
+       y = "Ptje. de protección latente de DDHH",
+       color = "") +
+  scale_color_manual(values = c("Enjuiciamientos t-1" = "orange", "Sentencias t-1" = "red")) +
+  scale_linetype_manual(values = c("Enjuiciamientos t-1" = "solid", "Sentencias t-1" = "dashed")) +
+  theme_bw() +
+  theme(legend.position = "top")
+
+```
+
+Por su parte, el Modelo 6 utiliza la misma especificación de variables del Modelo 4, pero reemplaza el recuento de comisiones de la verdad por indicadores binarios que dan cuenta de las recomendaciones de enjuiciamientos y reformas institucionales. Según la lógica del enfoque constructivista, las comisiones de la verdad que comunican la necesidad de realizar reformas institucionales o de someter a juicio a los criminales de lesa humanidad deberían contribuir más a la no repetición, que las comisiones que no realizan estas recomendaciones. Los hallazgos del Modelo 6 confirman parte de esta afirmación, ya que sus coeficientes indican que la protección latente de los derechos humanos se correlaciona positivamente con la recomendación de reformas institucionales (β = 0.545, p < 0.001), pero no con la recomendación de enjuiciamientos penales (β = -0.015, p = 0.890). A su vez, el coeficiente de regresión obtenido por las comisiones de la verdad que recomiendan reformas es mayor en magnitud que el estimado para las comisiones que no cumplen con esta característica (β = 0.256, p < 0.001).
+
+La figura 8 representa gráficamente la contribución de las recomendaciones de reformas institucionales a la protección de los derechos humanos en el Modelo 6. El tamaño y significación estadística de los coeficientes indica que el uso de una o más comisiones con recomendaciones de reformas durante el periodo post autoratio está asociado con un aumento de 0,545 puntos en el índice de protección de derechos de integridad física, mientras que las comisiones que no recomiendan reformas están asociadas con un aumento de 0,256 puntos en el mismo índice. Esta diferencia de magnitud permite aceptar la hipótesis 2(b) del enfoque constructivista, que afirma que las comisiones de la verdad contribuyen significativamente a la protección de los derechos humanos, y que dicho efecto es mayor cuando las comisiones recomiendan la realización de reformas institucionales para la no repetición.
+
+```{r Figura 8, fig.cap="Figura 8. Puntajes de protección latente de DDHH según tipo de comisiones de la verdad implementada en los años posteriores transición democrática"}
+
+b <- list(geom_vline(xintercept = 0, color = 'orange'),
+          annotate("rect", alpha = .1,
+                   xmin = -.5, xmax = .5, 
+                   ymin = -Inf, ymax = Inf),
+          geom_point(aes(y = term, x = estimate), alpha = .3, 
+                     size = 10, color = 'red'))
+
+modelsummary::modelplot(m6, 
+                        background = b,
+                        coef_map = c(
+                          
+                          "comisiones_dummy_l1Yes" = "Al menos una CdV (t-1)",
+                          "comisiones_enjuiciamientos_dummy_l1Yes" = "Al menos una CdV con recomendación de juicios (t-1)",
+                          "comisiones_reforma_dummy_l1Yes" = "Al menos una CdV con recomendación de reformas"
+                        )) +
+  aes(color = ifelse(p.value < 0.005, "Significativo", "No significantivo")) +
+  scale_color_manual(values = c("grey", "black"))
+
+```
+
+La tabla 10 presenta los resultados de los modelos 7 y 8 que ponen a prueba las hipótesis del enfoque holista de la justicia transicional. El modelo 7 examina el efecto de la interacción de los enjuiciamientos y amintías en la protección la protección de los derechos humanos; y el modelo 8, examina la contribución conjunta de los enjuiciamientos, amnistías y comisiones de la verdad.
+
+Desde el enfoque holista, se plantea que el uso combinado y secuencial de amnistías y enjuiciamientos, genera un equilibrio virtuoso entre los imperativos de la estabilidad política y los impulsos de rendición de cuentas que contribuye significativamente a la no repetición de los abusos del pasado, mejorando el nivel de protección de los derechos de integridad física en los países. Sin embargo, los hallazgos del modelo 7 muestran que la variable de interacción que analiza la contribución de enjuiciamientos acumulados cuando hay una o más leyes de amnistía vigentes en los países no está correlacionada con el nivel de protección de los derechos de integridad física (β = -0.002, p = 0.717).
+
+```{r Tabla 10}
+
+m7 <- plm(proteccion_ddhh ~ lag(proteccion_ddhh_acum,1)  + enjuiciamientos_acum_l1 * lag(amnistias_dummy, 2) + comisiones_acum_l1 + annos_transicion + tipo_transicion + polity2 + pib + poblacion + conflicto + intependencia_pjud,
+          data = datos_tesis %>%
+            mutate(comisiones_dummy_l1 = if_else(comisiones_acum_l1 > 0, 1, 0),
+                   comisiones_dummy_l1 = factor(comisiones_dummy_l1, labels = c("No", "Yes"))),
+          index = c("pais"),
+          model="within")
+
+m8 <- plm(proteccion_ddhh ~ lag(proteccion_ddhh_acum,1)  + enjuiciamientos_acum_l1 * lag(amnistias_dummy, 2) * comisiones_acum_l1 + annos_transicion + tipo_transicion + polity2 + pib + poblacion + conflicto + intependencia_pjud,
+          data = datos_tesis %>%
+            mutate(comisiones_dummy_l1 = if_else(comisiones_acum_l1 > 0, 1, 0),
+                   comisiones_dummy_l1 = factor(comisiones_dummy_l1, labels = c("No", "Yes"))),
+          index = c("pais"),
+          model="within")
+
+cm <- c("lag(proteccion_ddhh_acum, 1)" = "Media de protección de DDHH t-1",
+        "enjuiciamientos_acum_l1" = "Enjuiciamientos t-1",
+        "lag(amnistias_dummy, 2)" = "Al menos una ley de amnistía t-2",
+        "comisiones_acum_l1" = "CdV t-1",
+        "annos_transicion" = "Años de transición",
+        "tipo_transicionnegotiated" = "Tipo de transición: Negociada (ref: Ruptura)",
+        "polity" = "Polity 2",
+        "pib" = "PIB pc (ln)",
+        "poblacion" = "Población (ln)",
+        "conflictoconflict" = "Conflicto: Armado (ref: Sin conflicto)",
+        "conflictowar" = "Conflicto: Guerra (ref: Sin conflicto)",
+        "intependencia_pjud" = "Independencia PJUD"
+        )
+
+modelsummary(list("Modelo 7"= m7,
+                  "Modelo 8" =m8),
+             stars = T,
+             title = "Tabla 10. Coeficientes de regresión lineal (OLS) de la protección de los DDHH en los años posteriores a la transición democrática (Parte 2).",
+             output = "flextable",
+             coef_rename = cm,
+             ) %>%
+  autofit()
+
+```
+
+El modelo 8, por su parte, explora la hipótesis holista de que las comisiones de la verdad contribuyen significativamente a la no repetición cuando son combinadas con enjuiciamientos y amnistías para criminales de lesa humanidad. Para probar esta hipótesis se estimaron coeficientes de interacción para las variables que combinan el número de enjuiciamientos y comisiones de la verdad acumuladas en los años posteriores a la dictación de una o más leyes de amnistías. Los resultados del modelo 8 muestran que la combinación de los tres mecanismos de justicia transicional tampoco genera efectos significativos en la protección de los derechos humanos (β = 0.007, p = 0.636), por lo que no existe una relación entre ambas variables.
+
+La evidencia proporcionada por los modelos 8 y 9 rechaza las hipótesis del enfoque holista sobre la contribución de los mecanismos combinados de justicia transicional a la protección de los derechos humanos. Este hallazgo desafía la idea de que equilibrar las políticas de impunidad con la implementación de medidas judiciales y extrajudiciales de rendición de cuentas contribuye a la no repetición de los abusos estatales durante el período post autoritario. Asimismo, 
+
+Al comparar los resultados obtenidos por los enfoques de la justicia transicional, el enfoque constructivista es el que mostró una mayor concordancia entre las predicciones teóricas y los hallazgos empíricos. Las hipótesis constructivistas, que abogan por la eficacia de los enjuiciamientos y las comisiones de verdad en la protección de los derechos humanos en regímenes post autoritarios, recibieron respaldo sustancial. Los modelos de regresión revelaron correlaciones positivas y estadísticamente significativas entre el número de enjuiciamientos y comisiones de la verdad acumuladas durante los años posteriores a la transición democrática y el nivel de protección latente de los derechos de integridad física en los países de América Latina y el Caribe. Además, los resultados muestran que la contribución de los enjuiciamientos y las comisiones de la verdad a la protección de los derechos humanos es mayor cuando éstos culminan con el dictamen de veredictos de culpabilidad y la recomendación de reformas insticionales para no repetición.
+
+Los resultados obtenidos en los modelos de regresión son coherentes con la teoría constructivista, que sostiene que tanto los juicios penales como las comisiones de verdad desempeñan un papel crucial en disuadir violaciones futuras y fortalecer la percepción de responsabilidad. La idea de que el enjuiciamiento y castigo penal de criminales de lesa humanidad disuade a futuros perpetradores y que las comisiones de verdad, al comunicar simbólicamente las violaciones pasadas y sugerir reformas instituciones, contribuyen a la prevención de la violencia estatal, encuentra respaldo en los resultados empíricos de este estudio.
+
+En contraste, el enfoque holista, que destaca la combinación equilibrada de amnistías y juicios como contribución a la no repetición de abusos estatales, no obtuvo resultados significativos en las pruebas de hipótesis. Estos hallazgos desafían la premisa holista y sugieren que, al menos en el contexto latinoamericano, la estrategia equilibrada de amnistías y juicios no mostró la misma eficacia que la enfocada en enjuiciamientos y comisiones de verdad. En resumen, el estudio respalda la perspectiva constructivista al resaltar la importancia de los mecanismos de rendición de cuentas y comunicación simbólica para la protección de los derechos humanos en contextos post autoritarios.
+
+
+# CONCLUSIONES
+
+El objetivo general de este estudio de tesis fue evaluar la contribución de los mecanismos de justicia transicional a la prevención de golpes de estado y la protección de los derechos humanos de integridad física en los países de América Latina y el Caribe que experimentaron transiciones democráticas entre los años 1970 y 2010. Esta evaluación se hizo en función de las hipótesis formuladas por los enfoques teóricos de la justicia transicional sobre el impacto de los enjuiciamientos, amnistías y comisiones de la verdad en los regímenes post autoritarios: el enfoque realista, el enfoque constructivista y el enfoque holista.
+
+La prueba de las hipótesis consistió en estimar coeficientes de regresión del riesgo de golpes de estado y del puntaje de protección latente de los derechos de integridad física a partir del número acumulado de amnistías, enjuiciamientos y comisiones de la verdad en los países y años posteriores a la transición democrática. Para ello, se utilizaron modelos de regresión logística y lineal con efecto fijo por país, que incorporan indicadores de control estadístico asociados con el fenómeno de la represión y la violencia armada.
+
+Los resultados de la prueba de hipótesis indican, en primer lugar, que los enjuiciamientos y amnistías no están correlacionadas con el riesgo de golpes de estado, mientras que las comisiones de la verdad lo disminuyen significativamente. Estos hallazgos desafían las premisas del enfoque realista de la justicia transicional, que sugieren que las medidas punitivas (como los enjuiciamientos y los veredictos de culpabilidad) podrían desestabilizar el equilibrio de fuerzas dominantes y poner en riesgo la transición democrática, mientras que las amnistías ayudarían a prevenir golpes de estado y regresiones autoritarias.
+
+En segundo lugar, los modelos de regresión lineal revelaron correlaciones positivas entre el número de enjuiciamientos y comisiones de la verdad acumuladas durante los años posteriores a la transición democrática y el nivel de protección latente de los derechos de integridad física. Además, los coeficientes de regresión demuestran que la contribución de los enjuiciamientos y las comisiones de la verdad a la protección de los derechos humanos es mayor cuando culminan con el dictamen de veredictos de culpabilidad y la recomendación de reformas institucionales para la no repetición. Ambos hallazgos corroboran las hipótesis del enfoque constructivista de la justicia transicional, que plantea que los mecanismos judiciales y extrajudiciales de rendición de cuentas generan un efecto disuasorio entre los agentes de orden y seguridad, al comunicarles que serán sancionados penal y simbólicamente por la sociedad si repiten el comportamiento criminal que tuvieron durante el régimen autoritario anterior.
+
+En tercer lugar, los modelos de regresión no mostraron evidencia de que el uso combinado de amnistías y enjuiciamientos, o amnistías y comisiones de la verdad, disminuya el riesgo de golpes de estado o mejore los niveles de protección de los derechos de integridad física. Estos hallazgos desafían las premisas del enfoque holista de la justicia transicional y sugieren que, al menos en el contexto latinoamericano, la estrategia de equilibrar la rendición de cuentas con los imperativos de impunidad que supuestamente garantizan estabilidad política no mostró la misma eficacia que la estrategia enfocada exclusivamente en la obtención de verdad y justicia por los crímenes del pasado.
+
+En términos generales, la evidencia obtenida en este estudio de tesis respalda la teoría constructivista de la justicia transicional. Los hallazgos confirman que los enjuiciamientos y las comisiones de la verdad desempeñaron un papel importante en la prevención de la violencia estatal en los regímenes post autoritarios de América Latina y el Caribe entre los años 1970 y 2010, al fortalecer la percepción de responsabilidad individual e institucional de los agentes del Estado, socializar normas morales que deslegitiman las prácticas represivas, y señalar la necesidad de reformas institucionales para las fuerzas de orden y seguridad.
+
+En primer lugar, los resultados del estudio demuestran que los enjuiciamientos y veredictos de culpabilidad operan como un mecanismo de disuasión de los abusos a los derechos de integridad física al imponer sanciones penales a los perpetradores de violaciones de derechos humanos. La amenaza de nuevos enjuiciamientos y las consecuencias legales individuales que ello conlleva, actúan como un poderoso incentivo para que los funcionarios estatales se abstengan de cometer abusos en los años posteriores a la transición democrática. Además, los enjuiciamientos y veredictos de culpabilidad contribuyen a la socialización de los principios y valores del derecho internacional de los derechos humanos, ya que la actividad judicial refuerza las normas sociales que condenan el uso de la tortura, la prisión política, el asesinato y la desaparición forzada por parte de las fuerzas de orden y seguridad. La sociedad, al presenciar la rendición de cuentas y acceder al contenido de las condenas, internaliza estos valores y crea expectativas de comportamiento ético hacia las instituciones estatales que regulan el accionar de sus agentes.
+
+En segundo lugar, los resultados demuestran que las comisiones de la verdad también desempeñan un papel significativo en la disuasión de la violencia estatal, pero de una manera distinta a los enjuiciamientos. En lugar de imponer sanciones penales, las comisiones construyen una verdad histórica de las violaciones de derechos humanos. Este proceso de construcción social de la verdad tiene efectos positivos en la consolidación de la democracia post autoritaria y en la prevención de abusos a los derechos de integridad física. Primero, la exposición de la verdad tiene un impacto considerable en la percepción y opinión pública sobre el régimen autocrático anterior. Al documentar detalladamente las violaciones pasadas, las comisiones contribuyen a una narrativa histórica que deslegitima a las personas e instituciones involucradas en tales abusos, desalentando acciones armadas contra los gobiernos post autoritarios. Además, la responsabilidad moral asignada a las instituciones hace que una buena parte de los funcionarios de las fuerzas de orden y seguridad se resistan o se abstengan de participar en acciones represivas durante el periodo post autoritario. 
+
+En tercer lugar, los resultados del estudio mostraron que la publicación y difusión de los informes de las comisiones de la verdad que recomiendan reformas institucionales también puede influir en la prevención de la violencia estatal. El estudio detallado del patrón de abusos a los derechos humanos permite orientar reformas institucionales que, al comunicarse a la sociedad, generan un efecto positivo adicional en la protección de los derechos de integridad física. Sin embargo, el impacto directo de la implementación de reformas para la no repetición sigue siendo un fenómeno inexplorado dentro del campo de estudio de la justicia transicional. Las investigaciones futuras deberían examinar la contribución que hicieron las recomendaciones implementadas a la prevención de los abusos estatales en las democracias post autoritarias de América Latina y el Caribe y de otras regiones del mundo. Dichas investigaciones deberían también ampliar la cobertura de datos del *Transitional Justice Research Collaborative* (TJRC), incorporando el registro de las amnistías, enjuiciamientos y comisiones de la verdad celebradas en los años posteriores a 2010, con la finalidad de abarcar un periodo de tiempo más amplio y medir los efectos de cada mecanismo al largo plazo.
+
+Para finalizar, es importante señalar que la investigación desarrollada en esta tesis realiza aportes significativos al campo de estudio de la justicia transicional. En términos de diseño, la tesis introduce una estrategia de investigación novedosa que aborda desafíos teóricos y metodológicos mediante el uso de definiciones coherentes, datos comparables y modelos de análisis específicos. Al emplear indicadores del TJRC, la investigación logra una medición más precisa de los mecanismos de justicia transicional, superando las limitaciones de estudios anteriores que utilizan variables dicotómicas de registro anual [@Kim2010; @Olsen2010a; @Sikkink2013]. Al priorizar la prevención de golpes de estado como una de las variables de de resultado de la justicia transicional, la investigación ofrece una perspectiva original y específica sobre el papel de estos mecanismos en la consolidación democrática. En la misma línea, la utilización del Índice de Integridad Física Latente de [@Schnakenberg2013] para medir la protección de los derechos humanos representa una contribución sustantiva, al considerarse como el indicador más robusto desarrollado hasta la fecha. Además, al focalizarse exclusivamente en países de América Latina y el Caribe que experimentaron transiciones democráticas entre 1970 y 2010, la investigación construyó una muestra más homogénea y específica que la de @Dancy2019 y @Dancy2022, reduciendo el sesgo de variable omitida y permitiendo un análisis más preciso de la relación causal entre la justicia transicional, la democracia y la protección de los derechos humanos. Todos estos elementos conceptuales y metodológicos contribuyeron a la obtención de resultados y conclusiones más robustas y contextualizadas de los impactos de la justicia transicional, aunque estas no sean generalizables a otros contextos regionales.
+
+
+# BIBLIOGRAFÍA

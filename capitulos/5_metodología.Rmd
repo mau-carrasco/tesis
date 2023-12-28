@@ -26,32 +26,30 @@ library(rnaturalearthdata)
 library(countrycode)
 library(haven)
 
-setwd("~/GitHub/tesis_magister/")
-
 # Formato de tablas en flextable
 set_flextable_defaults(
   font.size = 10,
   font.family = "Garamond",
   theme_fun = "theme_zebra")
 
-datos_tesis <- read_rds("datos/datos_tesis.rds")
+datos_tesis <- read_rds("~/GitHub/tesis/datos/datos_tesis.rds")
 
-juicios <- read_dta("datos/barsbargains_replication/barsbargains.dta")
+juicios <- read_dta("~/GitHub/tesis/datos/barsbargains_replication/barsbargains.dta")
 
 datos_tesis <- datos_tesis %>% left_join(juicios %>% select(pais = country, anno = year, codigo_transicion = dtr_id, amnistias_dummy = ambin))
 ```
 
-# V. Metodología
+# METODOLOGÍA
 
-El capítulo III, estableció que el objetivo principal de la tesis es analizar la contribución de los mecanismos de justicia transicional a la democracia y la protección de los derechos humanos en los países de América Latina y el Caribe que experimentaron transiciones democráticas entre los años 1970 y 2010. Para cumplir con este objetivo se desarrolló un estudio cuantitativo que busca explicar la ocurrencia de golpes de estado y la variación en los niveles de protección de los derechos de integridad física en función del uso enjuiciamientos, amnistías y comisiones de la verdad en los años posteriores a la primera transición democrática de cada país.
+El capítulo tercero se estableció que el objetivo principal de la tesis es analizar la contribución de los mecanismos de justicia transicional a la prevención de golpes de estado y la protección de los derechos humanos en los países de América Latina y el Caribe que experimentaron transiciones democráticas entre los años 1970 y 2010. Para cumplir con este objetivo se desarrolló un estudio cuantitativo que busca explicar la ocurrencia de golpes de estado y la variación en los niveles de protección de los derechos de integridad física en función del uso enjuiciamientos, amnistías y comisiones de la verdad en los años posteriores a la primera transición democrática de cada país.
 
 En el presente capítulo, se describen los datos, variables y técnicas de análisis empleadas en el desarrollo de esta tesis de magister. En cada punto, se argumentan los criterios de selección de casos, indicadores y procedimientos estadísticos en función de los desafíos metodológicos planteados en el capítulo de problematización (capítulo II), y la definición de conceptos, teorías e hipótesis de investigación (capítulo III).
 
-## V.1 Datos
+## 1 Datos
 
-### V.1.1 Criterios de selección de casos y limitación temporalidad del estudio
+### 1.1 Criterios de selección de casos y limitación temporalidad del estudio
 
-Cómo se señaló en la propuesta de investigación de la tesis (Capítulo II.3), la selección de los casos de estudio se basó en dos criterios teóricos y metodológicos:
+Cómo se señaló en la propuesta de investigación de la tesis (Capítulo II. 3), la selección de los casos de estudio se basó en dos criterios teóricos y metodológicos:
 
 **a)	Similitud de pasados autoritarios recientes:**
 
@@ -85,7 +83,7 @@ La determinación del periodo de estudio se realizó en base a la información d
 
 Es importante tener en cuenta que esta muestra específica de países y años posteriores a la transición tiene limitaciones importantes. En primer lugar, la muestra fue construida con de evaluar la constribución de los mecanismos de justicia transicional a la protección de la democracia y los derechos humanos humanos dentro de un contexto particular de países de América Latina y el Caribe con democracias post autoritarias, lo hace que los resultados del estudio de tesis no sean generalizables a otros contextos regionales o a transiciones de guerras civiles en países democráticos sin pasados autoritarios recientes. En segundo lugar, la escaza información estadística disponible sobre el uso de enjuiciamientos, amnistías y comisiones en los países que han experimentado conflictos o transiciones democráticas hace que el periodo de estudio se restrinja artificialmente a la duración de los regímenes post autoritarios iniciados entre 1970 y 2010, por lo que no es posible evaluar el impacto de los mecanismos de justicia transicional en los años posteriores a este periodo. 
 
-### V.1.3 Estructura y organizaciones de la base de datos
+### 1.3 Estructura y organizaciones de la base de datos
 
 Considerando lo anterior, se elaboró una base de datos de series temporales transversales (TSCS, por sus siglas en inglés) que sistematiza información sobre enjuiciamientos, amnistías y comisiones de la verdad en los 17 países de América Latina y el Caribe que componen la muestra de estudio. En las bases de datos TSCS, cada fila (n) está asociada con una unidad específica (N) en un momento particular, y cada una de estas unidades se observa en repetidas ocasiones a lo largo de múltiples períodos de tiempo (T). En este caso, la muestra tienen un total de 456 observaciones (n) anidadas en 17 países (N) con diferentes años de transición (T = 14 - 37).
 
@@ -126,17 +124,17 @@ world %>%
 
 ```
 
-## V.2 Variables
+## 2 Variables
 
-### V.2.1 Variables dependientes
+### 2.1 Variables dependientes
 
-#### V.2.1.1 Golpes de estado
+#### 2.1.1 Golpes de estado
 
 En el diseño de esta tesis de magister, se propone que los golpes de estado sean considerados como variable dependiente para evaluar la contribución de la justicia transicional a la democracia. La elección de esta variable se basa en la teoría de que los mecanismos de justicia transicional, como los enjuiciamientos penales por violaciones de derechos humanos, pueden activar a actores que podrían oponerse e interrumpir por la fuerza el  proceso de transición democrática [@Snyder2003]. En otras palabras, la implementación de estos mecanismos podría aumentar el riesgo de golpes de estado.
 
 Para analizar la ocurrencia de golpes de estado en los años de transición por país se utilizaron los datos del proyecto *Military coups d état* (CAM por sus siglas en inglés), que registra un total de 477 golpes de estado ocurridos en 99 países entre los años 1950 y 2018 [@Albrecht2018].
 
-En concordancia con el marco conceptual (Capítulo IV.1), el proyecto CAM define los golpes de estado como “intentos ilegales y abiertos por parte de oficiales militares para derrocar [por las armas] a los ejecutivos en funciones” (Powell and Thyne 2011, p. 252). Y dentro de esa definición, distingue entre los golpes perpetrados por los oficiales de elite o los oficiales de combate.
+En concordancia con el marco conceptual (Capítulo I1), el proyecto CAM define los golpes de estado como “intentos ilegales y abiertos por parte de oficiales militares para derrocar [por las armas] a los ejecutivos en funciones” (Powell and Thyne 2011, p. 252). Y dentro de esa definición, distingue entre los golpes perpetrados por los oficiales de elite o los oficiales de combate.
 
 Según el CAM, los golpes de oficiales de élite son llevados a cabo por destacados oficiales militares y funcionarios gubernamentales provenientes del ejército, incluidos ministros de defensa, jefes de estado mayor generales, jefes de estado mayor y/o líderes de ramas de las fuerzas armadas o unidades militares funcionales (ejército, fuerza aérea, marina, guardia republicana), así como miembros de juntas y consejos militares gobernantes [@Albrecht2018]. Todos los demás golpes constituyen golpes de oficiales de combate.
 
@@ -197,7 +195,7 @@ datos_tesis %>%
   theme(text = element_text(size = 10, family = "Times"))
 ```
 
-#### V.1.2 Protección de los derechos de integridad física
+#### 1.2 Protección de los derechos de integridad física
 
 Hasta ahora, la investigación cuantitativa sobre justicia transicional utiliza preferentemente tres indicadores de protección de los derechos humanos: el Índice de Derechos de Integridad Física de Cingranelli y Richards -CIRI- [-@Cingranelli2010], la Escala de Terror Político -PTS- (Political Terror Scale) del Departamento de Ciencia Política de la Universidad de Carolina del Norte (EE.UU) [@Wood2010], y el Índice de Integridad Física Latente de Schnakenberg y Fariss (2014).
 
@@ -284,7 +282,7 @@ datos_tesis %>%
 
 ```
 
-### V.2.2 Variables independientes
+### 2.2 Variables independientes
 
 Para medir el uso de los mecanismos de justicia transicional se utilizaron los indicadores del Transitional Justice Research Collaborative (TJRC): un proyecto académico que, se basándose en las definiciones del derecho internacional, registró el número de enjuiciamientos, sentencias, amnistías y comisiones de la verdad que se celebraron entre años 1970 y 2010 para investigar los delitos perpetrados por agentes estatales o por privados que operaron con su aquiescencia durante el periodo autoritario anterior.
 
@@ -366,7 +364,7 @@ datos_tesis %>%
 ```
 >> Fuente: Elaboración propia en base a los datos del TJRC
 
-### V.2.3 Variables de control
+### 2.3 Variables de control
 
 Cómo variables de control se incorporaron diferentes tipos de indicadores. En primer lugar, se incorporaron indicadores de la base de datos del Banco Mundial relacionados con la estructura de la población, e indicadores sobre la existencia de conflictos violentos del conjunto de datos de conflictos armados UCDP/PRIO de la Universidad de Uppsala. En cuanto a la estructura de la población, el logaritmo natural del Producto Interno Bruto (PIB) per cápita (en dólares estadounidenses constantes) controla el nivel de riqueza nacional de un país, porque a menudo se encuentra que la democracia y la protección de los derechos humanos están fuertemente correlacionadas con la capacidad económica de las naciones [@Keith2012]. El control por tamaño de la población da cuenta de los posibles desafíos que plantean los países más grandes a la gobernabilidad democrática y la mayor oportunidad que tienen los estados de violar los derechos humanos en localidades densamente pobladas [@Davenport2004a]. Por su parte, el indicador que da cuenta de la existencia de conflictos armados internos, controla las amenazas a la seguridad nacional que pueden socavar tanto las instituciones democráticas como la protección de los derechos humanos. Esta variable distingue entre el conflicto de nivel inferior, con al menos 25 muertes relacionadas con batallas, y la guerra, que tiene al menos 1000 muertes relacionadas con batallas por cada año [@Pettersson2020]. 
 
@@ -384,9 +382,9 @@ datos_tesis %>%
   set_caption(caption = "Tabla 7. Estadísticos descriptivos de las variables de control")
 ```
 
-## V.3 Técnicas de análisis de datos
+## 3 Técnicas de análisis de datos
 
-### V.3.1 Regresiones logísticas y lineales en datos TSCS
+### 3.1 Regresiones logísticas y lineales en datos TSCS
 
 Siguiendo las recomendaciones de @Beck2011, se optó por analizar la contribución de los mecanismos de justicia transicional a la democracia y la protección de los derechos humanos a través de modelos de regresión logística y lineal para datos TSCS. Los modelos de regresión logística estiman la probabilidad de ocurrencia de intentos de golpes de estado en cada país y año de transición, en función del uso de uno o más mecanismos de justicia transicional. Y los modelos de regresión lineal estiman el puntaje latente de protección de los derechos de integridad física para cada país y año de transición, en función del uso individual y combinado de enjuiciamientos, amnistías y comisiones de la verdad.
 
@@ -410,7 +408,7 @@ Además, los modelos de regresión utilizan variables independientes rezagadas. 
 
 El historial represivo de los países y los rezagos de las variables independientes se representan en la fórmula de regresión mediante la inclusión de indicadores de interés y de control estadístico en períodos de tiempo anteriores. Por ejemplo, para estimar el puntaje latente de protección de los derechos de integridad física para un determinado país y año de transición (\(it\)), se incluyó el número de enjuiciamientos acumulados en el período \(t-1\) y la media del historial represivo del país en el periodo \(t-1\), entre otras variables independiente rezagada. Esto permite evaluar si el aumento en el número de enjuiciamientos acumulados en el período anterior (\(t-1\)) tiene un efecto significativo en el nivel de protección de los derechos humanos registrados en el periodo actual (\(t\)), considerando el historial represivo de ese país.
 
-### V.3.2 Errores estándar corregidos por paneles PCSEs
+### 3.2 Errores estándar corregidos por paneles PCSEs
 
 Los Errores Estándar Corregidos por Paneles (PCSEs por sus siglas en inglés) desempeñan un papel crucial en el trabajo con datos TSCS y modelos de regresión lineal. Estos permiten abordar los problemas más comunes que afectan la robustez y la validez de las estimaciones, como la heteroscedasticidad y la autocorrelación [@Beck2011; @Millo2017]. 
 
